@@ -20,8 +20,8 @@ localparam VBP = 33;
 localparam VFP = 10;
 
 // Declare horizontal and vertical counters
-reg[9:0] hc = 1;
-reg[9:0] vc = 1;
+reg[9:0] hc = 0;
+reg[9:0] vc = 0;
 
 // Change hc & vc correspondingly to the current state
 always @(posedge vgaclk) begin
@@ -69,8 +69,8 @@ always_comb begin
     if (vc < VLINES - 1 && hc < HPIXELS - 1)begin
         // Output the colors we want pixel by pixel
         red = 4'd15;
-        green = 4'd15;
-        blue = 4'd15;
+        green = 4'd0;
+        blue = 4'd0;
     end
     else begin
         // Output black
