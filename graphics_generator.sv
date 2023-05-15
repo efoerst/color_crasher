@@ -24,10 +24,6 @@ localparam HPIXELS = 640;
 localparam VPIXELS = 480;
 localparam BSIZE = 40;
 
-// Accounting Factors
-localparam HBUFF = 160;
-localparam VBUFF = 45;
-
 // Interum assignment values
 reg[3:0] red = 4'd0;
 reg[3:0] green = 4'd0;
