@@ -3,10 +3,15 @@ module vga(
     input rst,
     output hsync,
     output vsync,
+    output reg[9:0] hc,
+    output reg[9:0] vc,
     output reg[3:0] red;
     output reg[3:0] green;
     output reg[3:0] blue;
 );
+
+// Instantiate graphics_generator
+// TODO: Instantiate Here
 
 // Declare parameters
 localparam HPIXELS = 640;
@@ -67,10 +72,7 @@ assign vsync = !(vc > VLINES + VFP - 1 && vc <= VLINES + VFP + VPULSE - 1);`
 always_comb begin
     // Check to see if within vertical active video range
     if (vc < VLINES - 1 && hc < HPIXELS - 1)begin
-        // Output the colors we want pixel by pixel
-        red = 4'd15;
-        green = 4'd0;
-        blue = 4'd0;
+        
     end
     else begin
         // Output black
