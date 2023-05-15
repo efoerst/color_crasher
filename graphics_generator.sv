@@ -82,7 +82,7 @@ always_comb begin
                 - Modulus the horizontal counter (after blocking) with 2 and if the result is 0 then it is a confirmed location for the enemy
                 - Ensure that the location is a "visible" location for the enemy by making sure the cell is in the appropriate range
         */
-        else if ($mod((vertCount / BSIZE), 2) != 0 && $mod((horizCount / BSIZE), 2) == 0 && (horizCount / BSIZE) >= 4) begin
+        else if ((vertCount / BSIZE) % 2 != 0 && (horizCount / BSIZE) % 2 == 0 && (horizCount / BSIZE) >= 4) begin
             red = ddavers[(vertCount / BSIZE) / 2][(horizCount / BSIZE) / 2 - 2][11:8];
             green = ddavers[(vertCount / BSIZE) / 2][(horizCount / BSIZE) / 2 - 2][7:4];
             blue = ddavers[(vertCount / BSIZE) / 2][(horizCount / BSIZE) / 2 - 2][3:0];
