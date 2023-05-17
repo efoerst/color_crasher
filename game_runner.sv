@@ -11,7 +11,9 @@ module game_runner(clk, rst, sda, scl, hsync, vsync, hc, vc, red, green, blue);
 	reg [11:0] bulletBillColor [0:2];
 	reg [3:0] bulletBillXLoc [0:2];
 	reg [3:0] bulletBillYLoc [0:2];
-	reg [11:0] vgaColors [0:191];
+	reg [3:0] red_in;
+	reg [3:0] green_in;
+	reg [3:0] blue_in;
 	
 	localparam I2C_CLOCK_SPEED = 400000;
 	localparam VGA_CLOCK = 25000000;
@@ -29,7 +31,7 @@ module game_runner(clk, rst, sda, scl, hsync, vsync, hc, vc, red, green, blue);
 	clockdividers #(DDAVER_SPEED) ddaver_clock_uut(clk, rst, ddaver_clock);
 	clockdividers #(BULLET_SPEED) bullet_clock_uut(clk, rst, bullet_clock);
 	
-	graphics_generator main(hc, vc, blockieee, ddavers, bulletBillColor, bulletBillXLoc, bulletBillYLoc, vgaColors);
-	vga display(vga_clock, rst, vgaColors, hsync, vsync, hc, vc, red, green, blue);
+	graphics_generator i_luv_design(hc, vc, blockieee, ddavers, bulletBillColor, bulletBillXLoc, bulletBillYLoc, red_in, green_in, blue_in);
+	vga dispos(vga_clock, rst, red_in, green_in, blue_in, hsync, vsync, hc, vc, red, green, blue);
 
 endmodule
