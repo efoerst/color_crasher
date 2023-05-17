@@ -4,7 +4,9 @@ module vga(
     input rst,
 
     // Input vgaColors
-    input reg[11:0] vgaColors [0:191],
+    input reg[3:0] red_in,
+    input reg[3:0] green_in,
+    input reg[3:0] blue_in,
 
     output hsync,
     output vsync,
@@ -73,9 +75,9 @@ assign vsync = !(vc > VLINES + VFP - 1 && vc <= VLINES + VFP + VPULSE - 1);
 always_comb begin
     // Check to see if within vertical active video range
     if (vc < VLINES - 1 && hc < HPIXELS - 1) begin
-        red = vgaColors[(hc / BSIZE) + (vc / BSIZE) * 16][11:8];
-        green = vgaColors[(hc / BSIZE) + (vc / BSIZE) * 16][7:4];
-        blue = vgaColors[(hc / BSIZE) + (vc / BSIZE) * 16][3:0];
+        red = red_in;
+        green = green_in;
+        blue = blue_in;
     end
     else begin
         // Output black
