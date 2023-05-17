@@ -5,9 +5,9 @@ module vga(
     output vsync,
     output reg[9:0] hc,
     output reg[9:0] vc,
-    output reg[3:0] red;
-    output reg[3:0] green;
-    output reg[3:0] blue;
+    output reg[3:0] red,
+    output reg[3:0] green,
+    output reg[3:0] blue,
 );
 
 // Instantiate graphics_generator
