@@ -35,34 +35,34 @@ localparam BSIZE = 40;
 always @(posedge vgaclk) begin
     // RST
     if (rst == 0)begin
-        hc <= 0;
-        vc <= 0;
+        hc <= 10'd0;
+        vc <= 10'd0;
     end
     else begin
         // Go through pixel by pixel [include the blanking interval]
         // Reach the final pixel
         if ((hc == HPIXELS + HFP + HPULSE + HBP - 1) && (vc == VLINES + VFP + VPULSE + VBP - 1)) begin
-            hc <= 0;
-            vc <= 0;
+            hc <= 10'd0;
+            vc <= 10'd0;
         end
         // Otherwise continue through the VGA
         else begin
             // Have we reached the end of the horizontal "screen"
             if (hc == HPIXELS + HFP - 1) begin
-                hc <= hc + 1;
+                hc <= hc + 10'd1;
             end
             // Include the pulse and front porch
             else if (hc == HPIXELS + HFP  + HPULSE - 1) begin
-                hc <= hc + 1;
+                hc <= hc + 10'd1;
             end
             // Go down a level
             else if (hc == HPIXELS + HFP + HPULSE + HBP - 1) begin
-                vc <= vc + 1;
-                hc <= 0;
+                vc <= vc + 10'd1;
+                hc <= 10'd0;
             end
             // IF not any of these cases
             else begin
-                hc <= hc + 1;
+                hc <= hc + 10'd1;
             end
         end
     end
