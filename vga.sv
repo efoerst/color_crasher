@@ -1,18 +1,19 @@
 module vga(
+    // Input necessary vga aspects
     input vgaclk,
     input rst,
-    input reg [11:0] vgaColors [0:191],
+
+    // Input vgaColors
+    input reg[11:0] vgaColors [0:191],
+
     output hsync,
     output vsync,
     output reg[9:0] hc,
     output reg[9:0] vc,
     output reg[3:0] red,
     output reg[3:0] green,
-    output reg[3:0] blue,
+    output reg[3:0] blue
 );
-
-// Instantiate graphics_generator
-// TODO: Instantiate Here
 
 // Declare parameters
 localparam HPIXELS = 640;
@@ -24,6 +25,9 @@ localparam VLINES = 480;
 localparam VPULSE = 2;
 localparam VBP = 33;
 localparam VFP = 10;
+
+// Pixel block sizing
+localparam BSIZE = 40;
 
 // Declare horizontal and vertical counters
 reg[9:0] hc = 0;
@@ -67,13 +71,15 @@ always @(posedge vgaclk) begin
 end
 
 assign hsync = !(hc > HPIXELS + HFP - 1 && hc <= HPIXELS + HFP + HPULSE - 1);
-assign vsync = !(vc > VLINES + VFP - 1 && vc <= VLINES + VFP + VPULSE - 1);`
+assign vsync = !(vc > VLINES + VFP - 1 && vc <= VLINES + VFP + VPULSE - 1);
 
 // RGB output block
 always_comb begin
     // Check to see if within vertical active video range
-    if (vc < VLINES - 1 && hc < HPIXELS - 1)begin
-        
+    if (vc < VLINES - 1 && hc < HPIXELS - 1) begin
+        red = vgaColors[(hc / BSIZE) + (vc / BSIZE) * 16][11:8];
+        green = vgaColors[(hc / BSIZE) + (vc / BSIZE) * 16][7:4];
+        blue = vgaColors[(hc / BSIZE) + (vc / BSIZE) * 16][3:0];
     end
     else begin
         // Output black
