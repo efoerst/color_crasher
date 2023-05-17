@@ -1,19 +1,19 @@
 // Graphics Generator Module
 module graphics_generator(
     // Input the counters for pixel iteration
-    input reg[9:0] horizCount,
-    input reg[9:0] vertCount,
+    input[9:0] horizCount,
+    input[9:0] vertCount,
 
     // Declare input main character position
-    input reg[3:0] blockieee,
+    input[3:0] blockieee,
 
     // Declare Enemy (DDAVER) array
-    input reg[11:0] ddavers [0:4][0:5],
+    input[11:0] ddavers [0:4][0:5],
 
     // Declare BulletBill information arrays
-    input reg[11:0] bulletBillColor [0:2],
-    input reg[3:0] bulletBillXLoc [0:2],
-    input reg[3:0] bulletBillYLoc [0:2],
+    input[11:0] bulletBillColor [0:2],
+    input[3:0] bulletBillXLoc [0:2],
+    input[3:0] bulletBillYLoc [0:2],
 
     // Output VGA display colors
     /*
