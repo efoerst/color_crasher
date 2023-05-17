@@ -30,7 +30,7 @@ reg[3:0] green = 4'd0;
 reg[3:0] blue = 4'd0;
 
 // VGA Color Assignment
-vgaColors[(horizCount / BSIZE) + (vertCount / BSIZE) * 16] = {red, green, blue};
+assign vgaColors[(horizCount / BSIZE) + (vertCount / BSIZE) * 16] = {red, green, blue};
 
 // Assign vga colors
 always_comb begin
