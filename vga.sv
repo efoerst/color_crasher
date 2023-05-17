@@ -1,6 +1,7 @@
 module vga(
     input vgaclk,
     input rst,
+    input reg [11:0] vgaColors [0:191],
     output hsync,
     output vsync,
     output reg[9:0] hc,
