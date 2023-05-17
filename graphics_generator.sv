@@ -15,19 +15,20 @@ module graphics_generator(
     input reg[3:0] bulletBillXLoc [0:2],
     input reg[3:0] bulletBillYLoc [0:2],
 
-    // Output VGA display array
-    output reg[11:0] vgaColors [0:191]
+    // Output VGA display colors
+    /*
+    ERROR 1: Latching Inferred for vgaColors
+     - FIX: RGB colors are already changed bit by bit so instead of parsing an array just output these values into the other!
+    */
+    output reg[3:0] red;
+    output reg[3:0] green;
+    output reg[3:0] blue;
 );
 
 // Declare VGA parameters
 localparam HPIXELS = 640;
 localparam VPIXELS = 480;
 localparam BSIZE = 40;
-
-// Interum assignment values
-reg[3:0] red = 4'd0;
-reg[3:0] green = 4'd0;
-reg[3:0] blue = 4'd0;
 
 // Assign vga colors
 always_comb begin
@@ -39,7 +40,6 @@ always_comb begin
             red = 4'd2;
             green = 4'd8;
             blue = 4'd2;
-            vgaColors[(horizCount / BSIZE) + (vertCount / BSIZE) * 16] = {red, green, blue};
         end
 
         // Blockieee color application
@@ -48,7 +48,6 @@ always_comb begin
             red = 4'd15;
             green = 4'd15;
             blue = 4'd15;
-            vgaColors[(horizCount / BSIZE) + (vertCount / BSIZE) * 16] = {red, green, blue};
         end
 
         // -- Bullet Bill Battlefield Implementation --
@@ -58,23 +57,20 @@ always_comb begin
             red = bulletBillColor[0][11:8];
             green = bulletBillColor[0][7:4];
             blue = bulletBillColor[0][3:0];
-            vgaColors[(horizCount / BSIZE) + (vertCount / BSIZE) * 16] = {red, green, blue};
         end
-        //BulletBill 2
+        // BulletBill 2
         else if ((horizCount / BSIZE) == $unsigned(bulletBillXLoc[1]) && (vertCount / BSIZE) == $unsigned(bulletBillYLoc[1]) && bulletBillColor[1] != 12'd0) begin
             // Set RGB Values
             red = bulletBillColor[1][11:8];
             green = bulletBillColor[1][7:4];
             blue = bulletBillColor[1][3:0];
-            vgaColors[(horizCount / BSIZE) + (vertCount / BSIZE) * 16] = {red, green, blue};
         end
-        //BulletBill 3
+        // BulletBill 3
         else if ((horizCount / BSIZE) == $unsigned(bulletBillXLoc[2]) && (vertCount / BSIZE) == $unsigned(bulletBillYLoc[2]) && bulletBillColor[2] != 12'd0) begin
             // Set RGB Values
             red = bulletBillColor[2][11:8];
             green = bulletBillColor[2][7:4];
             blue = bulletBillColor[2][3:0];
-            vgaColors[(horizCount / BSIZE) + (vertCount / BSIZE) * 16] = {red, green, blue};
         end
 
         // -- Battlefield DDaver Implementation --
@@ -88,7 +84,6 @@ always_comb begin
             red = ddavers[(vertCount / BSIZE) / 2][(horizCount / BSIZE) / 2 - 2][11:8];
             green = ddavers[(vertCount / BSIZE) / 2][(horizCount / BSIZE) / 2 - 2][7:4];
             blue = ddavers[(vertCount / BSIZE) / 2][(horizCount / BSIZE) / 2 - 2][3:0];
-            vgaColors[(horizCount / BSIZE) + (vertCount / BSIZE) * 16] = {red, green, blue};
         end
 
         // Assign backdrop
@@ -96,7 +91,6 @@ always_comb begin
             red = 4'd0;
             green = 4'd0;
             blue = 4'd0;
-            vgaColors[(horizCount / BSIZE) + (vertCount / BSIZE) * 16] = {red, green, blue};
         end
     end
 
@@ -105,7 +99,6 @@ always_comb begin
         red = 4'd0;
         green = 4'd0;
         blue = 4'd0;
-        vgaColors[(horizCount / BSIZE) + (vertCount / BSIZE) * 16] = {red, green, blue};
     end
 end
 endmodule
