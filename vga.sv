@@ -29,10 +29,6 @@ localparam VFP = 10;
 // Pixel block sizing
 localparam BSIZE = 40;
 
-// Declare horizontal and vertical counters
-reg[9:0] hc = 0;
-reg[9:0] vc = 0;
-
 // Change hc & vc correspondingly to the current state
 always @(posedge vgaclk) begin
     // RST
