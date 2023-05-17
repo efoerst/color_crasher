@@ -11,9 +11,9 @@ module graphics_generator(
     input reg[11:0] ddavers [0:4][0:5],
 
     // Declare BulletBill information arrays
-    input reg[11:0] bulletBillColor [0:2];
-    input reg[3:0] bulletBillXLoc [0:2];
-    input reg[3:0] bulletBillYLoc [0:2];
+    input reg[11:0] bulletBillColor [0:2],
+    input reg[3:0] bulletBillXLoc [0:2],
+    input reg[3:0] bulletBillYLoc [0:2],
 
     // Output VGA display array
     output reg[11:0] vgaColors [0:191]
