@@ -1,5 +1,5 @@
 # color_crasher
-Color Crasher - A game of wits and rainbows
+<h1> Color Crasher - A game of wits and rainbows </h1>
 
 Hey everyone! This is our Capstone project for the Digital Design Architecture and Verification Project at IEEE at UCLA. Our idea for this project was to integrate the concept of Asteroids into a color-based game, where users would get to play an MC who shoots colorful attacks at some enemies.
 
