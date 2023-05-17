@@ -4,9 +4,9 @@ module vga(
     input rst,
 
     // Input vgaColors
-    input reg[3:0] red_in,
-    input reg[3:0] green_in,
-    input reg[3:0] blue_in,
+    input[3:0] red_in,
+    input[3:0] green_in,
+    input[3:0] blue_in,
 
     output hsync,
     output vsync,
@@ -41,7 +41,7 @@ always @(posedge vgaclk) begin
     else begin
         // Go through pixel by pixel [include the blanking interval]
         // Reach the final pixel
-        if (hc == HPIXELS + HFP + HPULSE + HBP - 1) && (vc == VLINES + VFP + VPULSE + VBP - 1) begin
+        if ((hc == HPIXELS + HFP + HPULSE + HBP - 1) && (vc == VLINES + VFP + VPULSE + VBP - 1)) begin
             hc <= 0;
             vc <= 0;
         end
