@@ -34,20 +34,20 @@ localparam BSIZE = 40;
 always_comb begin
     // Ensure actions occur while within the VGA Display range
     if (horizCount < HPIXELS - 1 && vertCount < VPIXELS - 1) begin
-        // Set the leftmost column (a.k.a. Homeworld) color
-        if ((horizCount / BSIZE) == 0) begin
-            // Set RGB Values
-            red = 4'd2;
-            green = 4'd8;
-            blue = 4'd2;
-        end
-        
         // Set the bottom row (buffer-land) color
-        else if ((vertCount / BSIZE) == 11) begin
+        if ((vertCount / BSIZE) == 11) begin
             // Set RGB Values
             red = 4'd0;
             green = 4'd0;
             blue = 4'd0;
+        end
+
+        // Set the leftmost column (a.k.a. Homeworld) color
+        else if ((horizCount / BSIZE) == 0) begin
+            // Set RGB Values
+            red = 4'd2;
+            green = 4'd8;
+            blue = 4'd2;
         end
 
         // Blockieee color application
