@@ -41,6 +41,14 @@ always_comb begin
             green = 4'd8;
             blue = 4'd2;
         end
+        
+        // Set the bottom row (buffer-land) color
+        else if ((vertCount / BSIZE) == 11) begin
+            // Set RGB Values
+            red = 4'd0;
+            green = 4'd0;
+            blue = 4'd0;
+        end
 
         // Blockieee color application
         else if ((horizCount / BSIZE) == 1 && (vertCount / BSIZE) == $unsigned(blockieee)) begin
