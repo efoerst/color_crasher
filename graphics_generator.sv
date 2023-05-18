@@ -37,9 +37,9 @@ always_comb begin
         // Set the bottom row (buffer-land) color
         if ((vertCount / BSIZE) == 11) begin
             // Set RGB Values
-            red = 4'd0;
-            green = 4'd0;
-            blue = 4'd0;
+            red = 4'd7;
+            green = 4'd7;
+            blue = 4'd7;
         end
 
         // Set the leftmost column (a.k.a. Homeworld) color
