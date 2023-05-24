@@ -20,9 +20,9 @@ module graphics_generator(
     ERROR 1: Latching Inferred for vgaColors
      - FIX: RGB colors are already changed bit by bit so instead of parsing an array just output these values into the other!
     */
-    output reg[3:0] red;
-    output reg[3:0] green;
-    output reg[3:0] blue;
+    output reg[3:0] red,
+    output reg[3:0] green,
+    output reg[3:0] blue
 );
 
 // Declare VGA parameters
