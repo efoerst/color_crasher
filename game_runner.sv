@@ -35,15 +35,15 @@ module game_runner(clk, rst, sda, scl, hsync, vsync, hc, vc, red, green, blue);
 	wire i2c_clock, polling_clock, vga_clock, blockieee_clock, ddaver_clock, bullet_clock;
 	
 	// Clock Divider Instantiations
-	clockdividers #(VGA_CLOCK) vga_clock_uut(clk, rst, vga_clock);
-	clockdividers #(BLOCKIEEE_SPEED) blockieee_clock_uut(clk, rst, blockieee_clock);
-	clockdividers #(DDAVER_SPEED) ddaver_clock_uut(clk, rst, ddaver_clock);
-	clockdividers #(BULLET_SPEED) bullet_clock_uut(clk, rst, bullet_clock);
+	clockdivider #(VGA_CLOCK) vga_clock_uut(clk, rst, vga_clock);
+	clockdivider #(BLOCKIEEE_SPEED) blockieee_clock_uut(clk, rst, blockieee_clock);
+	clockdivider #(DDAVER_SPEED) ddaver_clock_uut(clk, rst, ddaver_clock);
+	clockdivider #(BULLET_SPEED) bullet_clock_uut(clk, rst, bullet_clock);
 
 	// Game Interface Instantiations
-	nunchuck_translator hablo_i2c(clk, sda, scl, stick_x, stick_y, accel_x, accel_y, accel_z, z, c, rst);
+	nunchuckDriver hablo_i2c(clk, sda, scl, stick_x, stick_y, accel_x, accel_y, accel_z, z, c, rst);
 	graphics_generator i_luv_design(hc, vc, blockieee, ddavers, bulletBillColor, bulletBillXLoc, bulletBillYLoc, red_in, green_in, blue_in);
 	vga dispos(vga_clock, rst, red_in, green_in, blue_in, hsync, vsync, hc, vc, red, green, blue);
-	game_state_updater gamer_moment();
+	//game_state_updater gamer_moment();
 
 endmodule
