@@ -55,14 +55,14 @@ localparam DEADLOC = 0;             // TODO: Update this value later (Calibrate)
 
 // User Experience
 reg[3:0] start_pos = 4'd5;
-reg[3:0] curr_pos = start_pos;
+reg[3:0] curr_pos = 4'd5;
 reg isBlockieeeDead = 0;
 
 // Firing Mechanics
 reg isCollided [0:2];
-isCollided[0] = 0;
-isCollided[1] = 0;
-isCollided[2] = 0;
+assign isCollided[0] = 0;
+assign isCollided[1] = 0;
+assign isCollided[2] = 0;
 
 // Bullet Bill Position Tracer
 reg[3:0] shot_loc;
@@ -93,28 +93,33 @@ reg[1:0] next_blockieee_state = STEADY;
 
 // Bullet Bill
 reg[1:0] bulletBill_state[0:2];
-bulletBill_state[0] = BBDNE;
-bulletBill_state[1] = BBDNE;
-bulletBill_state[2] = BBDNE;
+assign bulletBill_state[0] = BBDNE;
+assign bulletBill_state[1] = BBDNE;
+assign bulletBill_state[2] = BBDNE;
 reg[1:0] next_bulletBill_state[0:2];
-next_bulletBill_state[0] = BBDNE;
-next_bulletBill_state[1] = BBDNE;
-next_bulletBill_state[2] = BBDNE;
+assign next_bulletBill_state[0] = BBDNE;
+assign next_bulletBill_state[1] = BBDNE;
+assign next_bulletBill_state[2] = BBDNE;
 
 // Ddaver
 reg[2:0] ddaver_state [0:4][0:5];
 reg[2:0] next_ddaver_state [0:4][0:5];
 
+
 // Initialize DDaver registers
-for (int i = 0; i < 5; i = i + 1) begin
-    for (int j = 0; j < 6; j = j + 1) begin
+integer i;
+integer j;
+initial begin
+	for (i = 0; i < 5; i = i + 1) begin
+		for (j = 0; j < 6; j = j + 1) begin
         // Initialize isHit to 0
-        isHit[i][j] = 0;
-        isHitAgain[i][j] = 0;
+			isHit[i][j] = 0;
+			isHitAgain[i][j] = 0;
         // Initialize states to DNE
-        ddaver_state[i][j] = DDNE;
-        next_ddaver_state[i][j] = DDNE;
-    end
+			ddaver_state[i][j] = DDNE;
+			next_ddaver_state[i][j] = DDNE;
+		end
+	end
 end
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -367,7 +372,7 @@ always_comb begin
                     end
                     // IF it is HIT by green bulletBill OR not HIT then does not matter no change
                     else begin
-                        next_ddaver_state[i][j] = ddaver_state[i][j]
+                        next_ddaver_state[i][j] = ddaver_state[i][j];
                     end
                 end
                 ORANGE: begin
@@ -386,7 +391,7 @@ always_comb begin
                     end
                     // IF it is HIT by blue bulletBill OR not HIT then does not matter no change
                     else begin
-                        next_ddaver_state[i][j] = ddaver_state[i][j]
+                        next_ddaver_state[i][j] = ddaver_state[i][j];
                     end
                 end
                 YELLOW: begin
@@ -405,7 +410,7 @@ always_comb begin
                     end
                     // IF it is HIT by green bulletBill OR not HIT then does not matter no change
                     else begin
-                        next_ddaver_state[i][j] = ddaver_state[i][j]
+                        next_ddaver_state[i][j] = ddaver_state[i][j];
                     end
                 end
 
@@ -425,7 +430,7 @@ always_comb begin
                     end
                     // Otherwise the enemy continues to exist happy and free
                     else begin
-                        next_ddaver_state[i][j] = ddaver_state[i][j]
+                        next_ddaver_state[i][j] = ddaver_state[i][j];
                     end
                 end
                 RED: begin
@@ -434,7 +439,7 @@ always_comb begin
                         next_ddaver_state[i][j] = DDNE;
                     end
                     else begin
-                        next_ddaver_state[i][j] = ddaver_state[i][j]
+                        next_ddaver_state[i][j] = ddaver_state[i][j];
                     end
                 end
                 GREEN: begin
@@ -443,7 +448,7 @@ always_comb begin
                         next_ddaver_state[i][j] = DDNE;
                     end
                     else begin
-                        next_ddaver_state[i][j] = ddaver_state[i][j]
+                        next_ddaver_state[i][j] = ddaver_state[i][j];
                     end
                 end
                 default: begin
