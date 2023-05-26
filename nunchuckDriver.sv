@@ -66,10 +66,8 @@ module nunchuckDriver(clock, SDApin, SCLpin, stick_x, stick_y, accel_x, accel_y,
 			This requirement will make more sense after Lecture 5
 	*/
 	
-	clockDivider #(I2C_CLOCK_SPEED) i2c_clock_uut(clock, i2c_clock, rst); 		//this clock corresponds to each I2C instruction 
-	clockDivider #(MESSAGE_RATE) polling_clock_uut(clock, polling_clock, rst); //clock is for spacing out messages to send
-	
-	
+	clockDivider #(I2C_CLOCK_SPEED) i2c_clock_uut(clock, rst, i2c_clock); 		//this clock corresponds to each I2C instruction 
+	clockDivider #(MESSAGE_RATE) polling_clock_uut(clock, rst, polling_clock); //clock is for spacing out messages to send
 	
 	// Polling Clock 
 	
