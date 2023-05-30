@@ -473,9 +473,9 @@ always_comb begin
 	////////////////////////////////////////////////////////////////////////////////////
 
     // Ddaver State Machine
-    for (int i = 0; i < 6; i = i + 1) begin
+    for (int i = 0; i < 5; i = i + 1) begin	// row iteration
         // Iterations per ddaver
-        for (int j = 0; j < 5; j = j + 1) begin
+        for (int j = 0; j < 6; j = j + 1) begin	// column iteration 
             case (ddaver_state[i][j])
             // The ddaver does not exist (is not visible onscreen)
                 DDNE: begin
@@ -484,8 +484,11 @@ always_comb begin
                         next_ddaver_state[i][j] = DDNE;
                     end
                     // Initialize the furthest column 
-						  else begin
+						  else if (j == 5) begin
 								next_ddaver_state[i][5] = ddaver_color[i];
+						  end
+						  else begin
+								next_ddaver_state[i][j] = DDNE;
 						  end
 						  
                 end
