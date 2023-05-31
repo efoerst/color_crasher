@@ -35,10 +35,10 @@ module game_runner(clk, rst, sda, scl, hsync, vsync, hc, vc, red, green, blue);
 	wire i2c_clock, polling_clock, vga_clock, blockieee_clock, ddaver_clock, bullet_clock;
 	
 	// Clock Divider Instantiations
-	clockdivider #(VGA_CLOCK) vga_clock_uut(clk, rst, vga_clock);
-	clockdivider #(BLOCKIEEE_SPEED) blockieee_clock_uut(clk, rst, blockieee_clock);
-	clockdivider #(DDAVER_SPEED) ddaver_clock_uut(clk, rst, ddaver_clock);
-	clockdivider #(BULLET_SPEED) bullet_clock_uut(clk, rst, bullet_clock);
+	clockdivider #(VGA_CLOCK) vga_clock_uut(clk, !rst, vga_clock);
+	clockdivider #(BLOCKIEEE_SPEED) blockieee_clock_uut(clk, !rst, blockieee_clock);
+	clockdivider #(DDAVER_SPEED) ddaver_clock_uut(clk, !rst, ddaver_clock);
+	clockdivider #(BULLET_SPEED) bullet_clock_uut(clk, !rst, bullet_clock);
 
 	// Game Interface Instantiations
 	nunchuckDriver hablo_i2c(clk, sda, scl, stick_x, stick_y, accel_x, accel_y, accel_z, z, c, rst);
