@@ -14,6 +14,22 @@ module game_interpreter(
     output reg[3:0] sub_bulletBillYLoc [0:2]
 );
 
+// Parameter values
+
+// Bullet Bill States
+localparam BBDNE = 0;
+localparam EBLUE = 1;
+localparam ERED = 2;
+localparam EGREEN = 3;
+// Ddaver States
+localparam DDNE = 0;
+localparam PURPLE = 1;
+localparam ORANGE = 2;
+localparam YELLOW = 3;
+localparam BLUE = 4;
+localparam RED = 5;
+localparam GREEN = 6;
+
 // Integer Values
 integer i;
 integer j;
