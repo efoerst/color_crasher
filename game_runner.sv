@@ -42,8 +42,8 @@ module game_runner(clk, rst, sda, scl, hsync, vsync, hc, vc, red, green, blue);
 
 	// Game Interface Instantiations
 	nunchuckDriver hablo_i2c(clk, sda, scl, stick_x, stick_y, accel_x, accel_y, accel_z, z, c, rst);
+	game_state_updater gamer_moment(rst, blockieee_clock, ddaver_clock, bullet_clock, stick_y, z, c, blockiee, ddavers, bulletBillColor, bulletBillXLoc, bulletBillYLoc);
 	graphics_generator i_luv_design(hc, vc, blockieee, ddavers, bulletBillColor, bulletBillXLoc, bulletBillYLoc, red_in, green_in, blue_in);
 	vga dispos(vga_clock, rst, red_in, green_in, blue_in, hsync, vsync, hc, vc, red, green, blue);
-	//game_state_updater gamer_moment();
 
 endmodule
