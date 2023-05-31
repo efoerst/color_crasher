@@ -3,7 +3,6 @@ module game_state_updater(
     input rst,
 
     // Input Clocks
-    input vga_clock,    // Might be useless
     input blockieee_clock,
     input ddaver_clock,
     input bullet_clock,
@@ -31,23 +30,23 @@ module game_state_updater(
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // FSM State Declarations
 // Blockieee States
-localparam STEADY = 0;
-localparam UP = 1;
-localparam DOWN = 2;
-localparam DEAD = 3;
+localparam STEADY = 2'd0;
+localparam UP = 2'd1;
+localparam DOWN = 2'd2;
+localparam DEAD = 2'd3;
 // Bullet Bill States
-localparam BBDNE = 0;
-localparam EBLUE = 1;
-localparam ERED = 2;
-localparam EGREEN = 3;
+localparam BBDNE = 2'd0;
+localparam EBLUE = 2'd1;
+localparam ERED = 2'd2;
+localparam EGREEN = 2'd3;
 // Ddaver States
-localparam DDNE = 0;
-localparam PURPLE = 1;
-localparam ORANGE = 2;
-localparam YELLOW = 3;
-localparam BLUE = 4;
-localparam RED = 5;
-localparam GREEN = 6;
+localparam DDNE = 3'd0;
+localparam PURPLE = 3'd1;
+localparam ORANGE = 3'd2;
+localparam YELLOW = 3'd3;
+localparam BLUE = 3'd4;
+localparam RED = 3'd5;
+localparam GREEN = 3'd6;
 
 // Tolerance Parameter
 localparam SENSITIVITY = 20;
@@ -55,6 +54,7 @@ localparam DEADLOC = 0;             // TODO: Update this value later (Calibrate)
 
 // User Experience
 reg[3:0] curr_pos = 4'd5;
+reg[3:0] next_pos = 4'd5;
 reg isBlockieeeDead = 0;                // LOSE Parameter
 
 // Firing Mechanics
@@ -98,6 +98,7 @@ reg[1:0] nextUp;
 // Ddaver
 reg[2:0] ddaver_state [0:4][0:5];
 reg[2:0] next_ddaver_state [0:4][0:5];
+reg[2:0] ndds [0:4][0:5];
 
 // Initialize registers
 integer i;
@@ -123,9 +124,10 @@ initial begin
 	for (i = 0; i < 5; i = i + 1) begin
 		for (j = 0; j < 6; j = j + 1) begin
         // Initialize isHit to 0
-			isHit[i][j] = 0;
-			isHitAgain[i][j] = 0;
+			isHit[i][j] = 2'd0;
+			isHitAgain[i][j] = 2'd0;
             secondTime[i][j] = 0;
+            ndds[i][j] = DDNE;
         // Initialize states to DNE
 			ddaver_state[i][j] = DDNE;
 			next_ddaver_state[i][j] = DDNE;
@@ -144,7 +146,6 @@ color_randomizer wanda_vision(ddaver_clock, rst, ddaver_color);
         Ever wonder why Computer Scientists and Computer Engineers always are in pain. Welp. This next portion is an example
         of why. Jokes aside, the sequential logic is based on various clocking cycles all at their posedge. The explanation of
         the logic behind the sequential lies here:
-            - vga_clock: The posedge for this clock will be used for reseting gameplay and tracing important values
             - blockieee_clock: The posedge for this clock will be used to update the position states of the MC depending on
                 nunchuck input.
             - ddaver_clock: The posedge for this clock will be used to update the movement of the ddavers across the screen
@@ -154,91 +155,56 @@ color_randomizer wanda_vision(ddaver_clock, rst, ddaver_color);
                 isHit OR the isHitAgain registers with the appropriate color of the bullet (in state form)
 */
 
-// General Gameplay
-always @(posedge vga_clock) begin
-    // Reset Logistics + IF YOU ARE A LOOOOOOOOSERRRRRRR
-    if (rst || isBlockieeeDead) begin
-        // Reinitialize Blockieee Operators
-        curr_pos <= 4'd5;
-        // Reinitialize Bullet Bill Operators
-        nextUp <= 2'd0;
-        for (i = 0; i < 3; i = i + 1) begin
-            bulletBill_curr_XLoc[i] <= 4'd0;
-            bulletBill_curr_YLoc[i] <= 4'd0;
-            isCollided[i] <= 0;
-            isEnd[i] <= 0;
-        end
-        // Reinitialize Ddaver Operators
-        otherActiveCol <= 3'd0;
-        activeCol <= 3'd6;
-        for (i = 0; i < 5; i = i + 1) begin
-            for (j = 0; j < 6; j = j + 1) begin
-			    isHit[i][j] <= 0;
-			    isHitAgain[i][j] <= 0;
-                secondTime[i][j] <= 0;
-            end
-        end
-    end
-    else begin
-        curr_pos <= curr_pos;
-        nextUp <= nextUp;
-        for (i = 0; i < 3; i = i + 1) begin
-            bulletBill_curr_XLoc[i] <= bulletBill_curr_XLoc[i];
-            bulletBill_curr_YLoc[i] <= bulletBill_curr_YLoc[i];
-            isCollided[i] <= isCollided[i];
-            isEnd[i] <= isEnd[i];
-        end
-        // Reinitialize Ddaver Operators
-        otherActiveCol <= otherActiveCol;
-        activeCol <= activeCol;
-        for (i = 0; i < 5; i = i + 1) begin
-            for (j = 0; j < 6; j = j + 1) begin
-			    isHit[i][j] <= isHit[i][j];
-			    isHitAgain[i][j] <= isHitAgain[i][j];
-                secondTime[i][j] <= secondTime[i][j];
-            end
-        end
-    end
-end
-
 // Blockieee Gameplay
 always @(posedge blockieee_clock) begin
+    // Reset conditions
+    if (rst || isBlockieeeDead) begin
+        // Reset to base condition
+        next_pos <= 4'd5;
+    end
     // If blockieee is in the Steady State
-    if (blockieee_state == STEADY) begin
+    else if (blockieee_state == STEADY) begin
         // Maintain the current position
-        curr_pos <= curr_pos;
+        next_pos <= curr_pos;
     end
     // If blockiee is in the UP State
     else if (blockieee_state == UP) begin
         // Increment up one so long as it is possible
         if (curr_pos > 4'd0) begin
-            curr_pos <= curr_pos - 4'd1;
+            next_pos <= curr_pos - 4'd1;
         end
         else begin
-            curr_pos <= curr_pos;
+            next_pos <= curr_pos;
         end
     end
     // If blockieee is in the DOWN State
     else if (blockieee_state == DOWN) begin
         // Increment down one so long as it is possible
         if (curr_pos < 4'd10) begin
-            curr_pos <= curr_pos + 4'd1;
+            next_pos <= curr_pos + 4'd1;
         end
         else begin
-            curr_pos <= curr_pos;
+            next_pos <= curr_pos;
         end
     end
     // Blockieee can literally be in no other state so like tell blockieee to stop trying
     else begin
-        curr_pos <= curr_pos;
+        next_pos <= curr_pos;
     end
 end
 
 // Bullet Bill Gameplay
 always @(posedge bullet_clock) begin
     // Bullet Bill 1 Implementation
+    if (rst || isBlockieeeDead) begin
+        nextUp <= 2'd0;
+        bulletBill_curr_XLoc[0] <= 4'd0;
+        bulletBill_curr_YLoc[0] <= 4'd0;
+        isCollided[0] <= 0;
+        isEnd[0] <= 0;
+    end
     // Spawning In
-    if (bulletBill_state[0] == BBDNE && next_bulletBill_state[0] != BBDNE && nextUp == 2'd0) begin
+    else if (bulletBill_state[0] == BBDNE && next_bulletBill_state[0] != BBDNE && nextUp == 2'd0) begin
         bulletBill_curr_YLoc[0] <= curr_pos;
         bulletBill_curr_XLoc[0] <= 4'd2;
         nextUp <= 2'd1;
@@ -280,8 +246,15 @@ always @(posedge bullet_clock) begin
     end
 
     // Bullet Bill 2 Implementation
+    if (rst || isBlockieeeDead) begin
+        nextUp <= 2'd0;
+        bulletBill_curr_XLoc[1] <= 4'd0;
+        bulletBill_curr_YLoc[1] <= 4'd0;
+        isCollided[1] <= 0;
+        isEnd[1] <= 0;
+    end
     // Spawning In
-    if (bulletBill_state[1] == BBDNE && next_bulletBill_state[1] != BBDNE && nextUp == 2'd1) begin
+    else if (bulletBill_state[1] == BBDNE && next_bulletBill_state[1] != BBDNE && nextUp == 2'd1) begin
         bulletBill_curr_YLoc[1] <= curr_pos;
         bulletBill_curr_XLoc[1] <= 4'd2;
         nextUp <= 2'd2;
@@ -323,8 +296,15 @@ always @(posedge bullet_clock) begin
     end
 
     // Bullet Bill 3 Implementation
+    if (rst || isBlockieeeDead) begin
+        nextUp <= 2'd0;
+        bulletBill_curr_XLoc[2] <= 4'd0;
+        bulletBill_curr_YLoc[2] <= 4'd0;
+        isCollided[2] <= 0;
+        isEnd[2] <= 0;
+    end
     // Spawning In
-    if (bulletBill_state[2] == BBDNE && next_bulletBill_state[2] != BBDNE && nextUp == 2'd2) begin
+    else if (bulletBill_state[2] == BBDNE && next_bulletBill_state[2] != BBDNE && nextUp == 2'd2) begin
         bulletBill_curr_YLoc[2] <= curr_pos;
         bulletBill_curr_XLoc[2] <= 4'd2;
         nextUp <= 2'd0;
@@ -367,12 +347,22 @@ always @(posedge bullet_clock) begin
 end
 
 // Ddaver Gameplay
-
-// TODO: Check this to ensure compliation
-
 always @(posedge ddaver_clock) begin
+    // Reset Condition
+    if (rst || isBlockieeeDead) begin
+        // Reinitialize Ddaver Operators
+        otherActiveCol <= 3'd0;
+        activeCol <= 3'd6;
+        for (i = 0; i < 5; i = i + 1) begin
+            for (j = 0; j < 6; j = j + 1) begin
+			    isHit[i][j] <= 0;
+			    isHitAgain[i][j] <= 0;
+                secondTime[i][j] <= 0;
+            end
+        end
+    end
     // If any ddaver crosses the "Homeworld" barrier then it is GAME OVER
-    if (((| ddaver_state[0][0]) || (| ddaver_state[1][0]) || (| ddaver_state[2][0]) || (| ddaver_state[3][0]) || (| ddaver_state[4][0])) && ((| next_ddaver_state[0][0]) || (| next_ddaver_state[1][0]) || (| next_ddaver_state[2][0]) || (| next_ddaver_state[3][0]) || (| next_ddaver_state[4][0]))) begin
+    else if (((| ddaver_state[0][0]) || (| ddaver_state[1][0]) || (| ddaver_state[2][0]) || (| ddaver_state[3][0]) || (| ddaver_state[4][0])) && ((| next_ddaver_state[0][0]) || (| next_ddaver_state[1][0]) || (| next_ddaver_state[2][0]) || (| next_ddaver_state[3][0]) || (| next_ddaver_state[4][0]))) begin
         isBlockieeeDead <= 1;
     end
     // Check to see active columns
@@ -381,52 +371,52 @@ always @(posedge ddaver_clock) begin
         // State Initialization + Incrementation
         for (i = 0; i < 5; i = i + 1) begin
             if (activeCol == 3'd6) begin
-                next_ddaver_state[i][0] <= DDNE;
-                next_ddaver_state[i][1] <= DDNE;
-                next_ddaver_state[i][2] <= DDNE;
-                next_ddaver_state[i][3] <= DDNE;
-                next_ddaver_state[i][4] <= DDNE;
-                next_ddaver_state[i][5] <= ddaver_color[i];
+                ndds[i][0] <= DDNE;
+                ndds[i][1] <= DDNE;
+                ndds[i][2] <= DDNE;
+                ndds[i][3] <= DDNE;
+                ndds[i][4] <= DDNE;
+                ndds[i][5] <= ddaver_color[i];
             end
             else if (activeCol == 3'd5) begin
-                next_ddaver_state[i][0] <= DDNE;
-                next_ddaver_state[i][1] <= DDNE;
-                next_ddaver_state[i][2] <= DDNE;
-                next_ddaver_state[i][3] <= DDNE;
-                next_ddaver_state[i][4] <= ddaver_state[i][5];
-                next_ddaver_state[i][5] <= ddaver_color[i];
+                ndds[i][0] <= DDNE;
+                ndds[i][1] <= DDNE;
+                ndds[i][2] <= DDNE;
+                ndds[i][3] <= DDNE;
+                ndds[i][4] <= ddaver_state[i][5];
+                ndds[i][5] <= ddaver_color[i];
             end
             else if (activeCol == 3'd4) begin
-                next_ddaver_state[i][0] <= DDNE;
-                next_ddaver_state[i][1] <= DDNE;
-                next_ddaver_state[i][2] <= DDNE;
-                next_ddaver_state[i][3] <= ddaver_state[i][4];
-                next_ddaver_state[i][4] <= ddaver_state[i][5];
-                next_ddaver_state[i][5] <= ddaver_color[i];
+                ndds[i][0] <= DDNE;
+                ndds[i][1] <= DDNE;
+                ndds[i][2] <= DDNE;
+                ndds[i][3] <= ddaver_state[i][4];
+                ndds[i][4] <= ddaver_state[i][5];
+                ndds[i][5] <= ddaver_color[i];
             end
             else if (activeCol == 3'd3) begin
-                next_ddaver_state[i][0] <= DDNE;
-                next_ddaver_state[i][1] <= DDNE;
-                next_ddaver_state[i][2] <= ddaver_state[i][3];
-                next_ddaver_state[i][3] <= ddaver_state[i][4];
-                next_ddaver_state[i][4] <= ddaver_state[i][5];
-                next_ddaver_state[i][5] <= ddaver_color[i];
+                ndds[i][0] <= DDNE;
+                ndds[i][1] <= DDNE;
+                ndds[i][2] <= ddaver_state[i][3];
+                ndds[i][3] <= ddaver_state[i][4];
+                ndds[i][4] <= ddaver_state[i][5];
+                ndds[i][5] <= ddaver_color[i];
             end
             else if (activeCol == 3'd2) begin
-                next_ddaver_state[i][0] <= DDNE;
-                next_ddaver_state[i][1] <= ddaver_state[i][2];
-                next_ddaver_state[i][2] <= ddaver_state[i][3];
-                next_ddaver_state[i][3] <= ddaver_state[i][4];
-                next_ddaver_state[i][4] <= ddaver_state[i][5];
-                next_ddaver_state[i][5] <= ddaver_color[i];
+                ndds[i][0] <= DDNE;
+                ndds[i][1] <= ddaver_state[i][2];
+                ndds[i][2] <= ddaver_state[i][3];
+                ndds[i][3] <= ddaver_state[i][4];
+                ndds[i][4] <= ddaver_state[i][5];
+                ndds[i][5] <= ddaver_color[i];
             end
             else begin
-                next_ddaver_state[i][0] <= ddaver_state[i][1];
-                next_ddaver_state[i][1] <= ddaver_state[i][2];
-                next_ddaver_state[i][2] <= ddaver_state[i][3];
-                next_ddaver_state[i][3] <= ddaver_state[i][4];
-                next_ddaver_state[i][4] <= ddaver_state[i][5];
-                next_ddaver_state[i][5] <= ddaver_color[i];
+                ndds[i][0] <= ddaver_state[i][1];
+                ndds[i][1] <= ddaver_state[i][2];
+                ndds[i][2] <= ddaver_state[i][3];
+                ndds[i][3] <= ddaver_state[i][4];
+                ndds[i][4] <= ddaver_state[i][5];
+                ndds[i][5] <= ddaver_color[i];
             end
         end
     end
@@ -436,52 +426,52 @@ always @(posedge ddaver_clock) begin
         // otherActiveCol will begin incrementing as soon as activeCol reaches 0 [staggered response].
         for (i = 0; i < 5; i = i + 1) begin
             if (otherActiveCol == 3'd6) begin
-                next_ddaver_state[i][0] <= ddaver_state[i][1];
-                next_ddaver_state[i][1] <= ddaver_state[i][2];
-                next_ddaver_state[i][2] <= ddaver_state[i][3];
-                next_ddaver_state[i][3] <= ddaver_state[i][4];
-                next_ddaver_state[i][4] <= ddaver_state[i][5];
-                next_ddaver_state[i][5] <= DDNE;
+                ndds[i][0] <= ddaver_state[i][1];
+                ndds[i][1] <= ddaver_state[i][2];
+                ndds[i][2] <= ddaver_state[i][3];
+                ndds[i][3] <= ddaver_state[i][4];
+                ndds[i][4] <= ddaver_state[i][5];
+                ndds[i][5] <= DDNE;
             end
             else if (otherActiveCol == 3'd5) begin
-                next_ddaver_state[i][0] <= ddaver_state[i][1];
-                next_ddaver_state[i][1] <= ddaver_state[i][2];
-                next_ddaver_state[i][2] <= ddaver_state[i][3];
-                next_ddaver_state[i][3] <= ddaver_state[i][4];
-                next_ddaver_state[i][4] <= DDNE;
-                next_ddaver_state[i][5] <= DDNE;
+                ndds[i][0] <= ddaver_state[i][1];
+                ndds[i][1] <= ddaver_state[i][2];
+                ndds[i][2] <= ddaver_state[i][3];
+                ndds[i][3] <= ddaver_state[i][4];
+                ndds[i][4] <= DDNE;
+                ndds[i][5] <= DDNE;
             end
             else if (otherActiveCol == 3'd4) begin
-                next_ddaver_state[i][0] <= ddaver_state[i][1];
-                next_ddaver_state[i][1] <= ddaver_state[i][2];
-                next_ddaver_state[i][2] <= ddaver_state[i][3];
-                next_ddaver_state[i][3] <= DDNE;
-                next_ddaver_state[i][4] <= DDNE;
-                next_ddaver_state[i][5] <= DDNE;
+                ndds[i][0] <= ddaver_state[i][1];
+                ndds[i][1] <= ddaver_state[i][2];
+                ndds[i][2] <= ddaver_state[i][3];
+                ndds[i][3] <= DDNE;
+                ndds[i][4] <= DDNE;
+                ndds[i][5] <= DDNE;
             end
             else if (otherActiveCol == 3'd3) begin
-                next_ddaver_state[i][0] <= ddaver_state[i][1];
-                next_ddaver_state[i][1] <= ddaver_state[i][2];
-                next_ddaver_state[i][2] <= DDNE;
-                next_ddaver_state[i][3] <= DDNE;
-                next_ddaver_state[i][4] <= DDNE;
-                next_ddaver_state[i][5] <= DDNE;
+                ndds[i][0] <= ddaver_state[i][1];
+                ndds[i][1] <= ddaver_state[i][2];
+                ndds[i][2] <= DDNE;
+                ndds[i][3] <= DDNE;
+                ndds[i][4] <= DDNE;
+                ndds[i][5] <= DDNE;
             end
             else if (otherActiveCol == 3'd2) begin
-                next_ddaver_state[i][0] <= ddaver_state[i][1];
-                next_ddaver_state[i][1] <= DDNE;
-                next_ddaver_state[i][2] <= DDNE;
-                next_ddaver_state[i][3] <= DDNE;
-                next_ddaver_state[i][4] <= DDNE;
-                next_ddaver_state[i][5] <= DDNE;
+                ndds[i][0] <= ddaver_state[i][1];
+                ndds[i][1] <= DDNE;
+                ndds[i][2] <= DDNE;
+                ndds[i][3] <= DDNE;
+                ndds[i][4] <= DDNE;
+                ndds[i][5] <= DDNE;
             end
             else begin
-                next_ddaver_state[i][0] <= DDNE;
-                next_ddaver_state[i][1] <= DDNE;
-                next_ddaver_state[i][2] <= DDNE;
-                next_ddaver_state[i][3] <= DDNE;
-                next_ddaver_state[i][4] <= DDNE;
-                next_ddaver_state[i][5] <= DDNE;
+                ndds[i][0] <= DDNE;
+                ndds[i][1] <= DDNE;
+                ndds[i][2] <= DDNE;
+                ndds[i][3] <= DDNE;
+                ndds[i][4] <= DDNE;
+                ndds[i][5] <= DDNE;
             end
         end
     end
@@ -493,7 +483,7 @@ always @(posedge ddaver_clock) begin
         for (i = 0; i < 5; i = i + 1) begin
             for (j = 0; j < 6; j = j + 1) begin
                 // This would infer a stagnent screen (a.k.a. no movement and likely no color) if it were to occur. Pray for me.
-                next_ddaver_state[i][j] <= ddaver_state[i][j]
+                ndds[i][j] <= ddaver_state[i][j]
             end
         end
     end
@@ -501,17 +491,21 @@ end
 
 // Negative Edge Updating
 always @(negedge blockieee_clock) begin
+    curr_pos <= next_pos;
     blockieee_state <= next_blockieee_state;
 end
 always @(negedge bullet_clock) begin
-    bulletBill_state[0] <= next_bulletBill_state[0];
-    bulletBill_state[1] <= next_bulletBill_state[1];
-    bulletBill_state[2] <= next_bulletBill_state[2];
+    bulletBill_state <= next_bulletBill_state;
 end
 always @(negedge ddaver_clock) begin
+    // State Updating
     for (i = 0; i < 5; i = i + 1) begin
         for (j = 0; j < 6; j = j + 1) begin
-            next_ddaver_state[i][j] <= ddaver_state[i][j];
+            ddaver_state[i][j] <= next_ddaver_state[i][j];
+            // Ddaver Life Indicator
+            if (isHit[i][j] != DDNE && isHitAgain[i][j] == DDNE) begin
+                secondTime[i][j] <= 1;
+            end
         end
     end
 
@@ -719,13 +713,11 @@ always_comb begin
                     else if (isHit[i][j] == EBLUE) begin
                         // Change color to red
                         next_ddaver_state[i][j] = RED;
-                        secondTime[i][j] = 1;
                     end
                     // HIT by Red bulletBill
                     else if (isHit[i][j] == ERED) begin
                         // Change color to blue
                         next_ddaver_state[i][j] = BLUE;
-                        secondTime[i][j] = 1;
                     end
                     // IF it is HIT by green bulletBill OR not HIT then does not matter no change
                     else begin
@@ -740,13 +732,11 @@ always_comb begin
                     else if (isHit[i][j] == EGREEN) begin
                         // Change color to Red
                         next_ddaver_state[i][j] = RED;
-                        secondTime[i][j] = 1;
                     end
                     // HIT by Red bulletBill
                     else if (isHit[i][j] == ERED) begin
                         // Change color to green
                         next_ddaver_state[i][j] = GREEN;
-                        secondTime[i][j] = 1;
                     end
                     // IF it is HIT by blue bulletBill OR not HIT then does not matter no change
                     else begin
@@ -761,13 +751,11 @@ always_comb begin
                     else if (isHit[i][j] == EBLUE) begin
                         // Change color to green
                         next_ddaver_state[i][j] = GREEN;
-                        secondTime[i][j] = 1;
                     end
                     // HIT by Green bulletBill
                     else if (isHit[i][j] == EGREEN) begin
                         // Change color to blue
                         next_ddaver_state[i][j] = BLUE;
-                        secondTime[i][j] = 1;
                     end
                     // IF it is HIT by green bulletBill OR not HIT then does not matter no change
                     else begin
@@ -823,7 +811,7 @@ end
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Set Outputs for the VGA
-game_interpreter pain_interpreter(curr_pos, ddaver_state, bulletBill_state, bulletBill_curr_XLoc, bulletBill_curr_YLoc, blockieee_pos, ddavers, bulletBillColor, bulletBillXLoc, bulletBillYLoc);
+game_interpreter pain_interpreter(curr_pos, ndds, bulletBill_state, bulletBill_curr_XLoc, bulletBill_curr_YLoc, blockieee_pos, ddavers, bulletBillColor, bulletBillXLoc, bulletBillYLoc);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
