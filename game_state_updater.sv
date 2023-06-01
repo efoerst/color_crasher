@@ -3,7 +3,9 @@ module game_state_updater(
     input rst,
 
     // Input Clocks
-    input clk,
+    input blockieee_clock, // 60 hz
+    input ddaver_clock,    // 1 hz
+    input bullet_clock,    // 90 hz
 
     // Input Nunchuk Data
     input[7:0] stick_y,
@@ -49,11 +51,6 @@ localparam GREEN = 3'd6;
 // Tolerance Parameter
 localparam SENSITIVITY = 8'd20;
 localparam DEADLOC = 8'd128;             // TODO: Update this value later (Calibrate)
-
-// Clock speeds
-localparam BLOCKIEEE_SPEED = 60;
-localparam DDAVER_SPEED = 1;
-localparam BULLET_SPEED = 90;
 
 // User Experience
 reg[3:0] curr_pos = 4'd5;
@@ -104,11 +101,6 @@ reg[2:0] ddaver_state [0:4][0:5];
 reg[2:0] next_ddaver_state [0:4][0:5];
 reg[2:0] ndds[0:4][0:5];
 reg[2:0] ddaver_color[0:4];
-
-// Initialize clocks
-clockdivider #(BLOCKIEEE_SPEED) blockieee_clock_uut(clk, !rst, blockieee_clock);
-clockdivider #(DDAVER_SPEED) ddaver_clock_uut(clk, !rst, ddaver_clock);
-clockdivider #(BULLET_SPEED) bullet_clock_uut(clk, !rst, bullet_clock);
 
 // Initialize DDaver registers
 integer i;
@@ -201,7 +193,7 @@ always @(posedge blockieee_clock) begin
         next_pos <= curr_pos;
     end
 end
-
+/*
 // Bullet Bill Gameplay
 // TODO: Make sure to keep coordinates straight with shifting pointer to take into account the main coordinate plane
 //			outside of the state machine 
@@ -347,7 +339,7 @@ always @(posedge bullet_clock) begin
 		 nextUp <= 2'd2; 
 	 end
 	 
-end
+end*/
 
 // ddaver gameplay
 // TODO: If the ddaver is red, green, or blue then secondTime should be true
@@ -365,8 +357,8 @@ always @(posedge ddaver_clock) begin
         activeCol <= activeCol;
         for (i = 0; i < 5; i = i + 1) begin
             for (j = 0; j < 6; j = j + 1) begin
-			    isHit[i][j] <= isHit[i][j];
-			    isHitAgain[i][j] <= isHitAgain[i][j];
+	   		    isHit[i][j] <= isHit[i][j];
+   			    isHitAgain[i][j] <= isHitAgain[i][j];
                 secondTime[i][j] <= secondTime[i][j];
             end
         end
@@ -389,8 +381,8 @@ always @(posedge ddaver_clock) begin
 		end
 		else if (activeCol == 5) begin
 			for (m = 0; m < 5; m = m + 1) begin
-				ndds[m][4] <= ddaver_state[m][5];
 				ndds[m][5] <= ddaver_color[m];
+				ndds[m][4] <= ddaver_state[m][5];
 				ndds[m][3] <= DDNE;
 				ndds[m][2] <= DDNE;
 				ndds[m][1] <= DDNE;
@@ -524,9 +516,9 @@ always @(negedge blockieee_clock) begin
 	 curr_pos <= next_pos;
 end
 
-always @(negedge bullet_clock) begin
-	 bulletBill_state <= next_bulletBill_state;
-end
+// always @(negedge bullet_clock) begin
+// 	 bulletBill_state <= next_bulletBill_state;
+// end
 
 always @(negedge ddaver_clock) begin
 	 int a;
@@ -653,80 +645,80 @@ always_comb begin
 	////////////////////////////////////////////////////////////////////////////////////
 
     // Bullet Bill State Machine
-    for (int i = 0; i < 3; i = i + 1) begin
-        // Iterations per bullet
-        case (bulletBill_state[i])
-            // The bullet does not exist
-            BBDNE: begin
-                // If the game is reset or a bullet collides with something reset it
-                if (rst || isCollided[i] || isEnd[i]) begin
-                    next_bulletBill_state[i] = BBDNE;
-                end
-                // If any button is pressed
-                else if (z || c) begin
-                    // Sort through the options availble
-                    // If 'z' is pressed
-                    if (z && ~c) begin
-                        next_bulletBill_state[i] = EBLUE;
-                    end
-                    // If 'c' is pressed
-                    else if (~z && c) begin
-                        next_bulletBill_state[i] = ERED;
-                    end
-                    // If both are pressed
-                    else begin
-                        next_bulletBill_state[i] = EGREEN;
-                    end
-                end
-                // If no button is pressed
-                else begin
-                    next_bulletBill_state[i] = BBDNE;
-                end
-            end
-            // But what if the bullet already has a color?
-            // The bullet exists and is colored blue
-            EBLUE: begin
-                // If the game is reset... well you know what to do.
-                if (rst || isCollided[i] || isEnd[i]) begin
-                    next_bulletBill_state[i] = BBDNE;
-                end
-                // The bullet should not change states regardless of button input
-                // Maintain current state
-                else begin
-                    next_bulletBill_state[i] = bulletBill_state[i];
-                end
-            end
-            // The bullet exists and is colored red
-            ERED: begin
-                if (rst || isCollided[i] || isEnd[i]) begin
-                    next_bulletBill_state[i] = BBDNE;
-                end
-                // The bullet should not change states regardless of button input
-                // Maintain current state
-                else begin
-                    next_bulletBill_state[i] = bulletBill_state[i];
-                end
-            end
-            // The bullet exists and is colored green
-            EGREEN: begin
-                if (rst || isCollided[i] || isEnd[i]) begin
-                    next_bulletBill_state[i] = BBDNE;
-                end
-                // The bullet should not change states regardless of button input
-                // Maintain current state
-                else begin
-                    next_bulletBill_state[i] = bulletBill_state[i];
-                end
-            end
-            default: begin
-                next_bulletBill_state[i] = bulletBill_state[i];
-            end
-        endcase
-    end
+    // for (int i = 0; i < 3; i = i + 1) begin
+    //     // Iterations per bullet
+    //     case (bulletBill_state[i])
+    //         // The bullet does not exist
+    //         BBDNE: begin
+    //             // If the game is reset or a bullet collides with something reset it
+    //             if (rst || isCollided[i] || isEnd[i]) begin
+    //                 next_bulletBill_state[i] = BBDNE;
+    //             end
+    //             // If any button is pressed
+    //             else if (z || c) begin
+    //                 // Sort through the options availble
+    //                 // If 'z' is pressed
+    //                 if (z && ~c) begin
+    //                     next_bulletBill_state[i] = EBLUE;
+    //                 end
+    //                 // If 'c' is pressed
+    //                 else if (~z && c) begin
+    //                     next_bulletBill_state[i] = ERED;
+    //                 end
+    //                 // If both are pressed
+    //                 else begin
+    //                     next_bulletBill_state[i] = EGREEN;
+    //                 end
+    //             end
+    //             // If no button is pressed
+    //             else begin
+    //                 next_bulletBill_state[i] = BBDNE;
+    //             end
+    //         end
+    //         // But what if the bullet already has a color?
+    //         // The bullet exists and is colored blue
+    //         EBLUE: begin
+    //             // If the game is reset... well you know what to do.
+    //             if (rst || isCollided[i] || isEnd[i]) begin
+    //                 next_bulletBill_state[i] = BBDNE;
+    //             end
+    //             // The bullet should not change states regardless of button input
+    //             // Maintain current state
+    //             else begin
+    //                 next_bulletBill_state[i] = bulletBill_state[i];
+    //             end
+    //         end
+    //         // The bullet exists and is colored red
+    //         ERED: begin
+    //             if (rst || isCollided[i] || isEnd[i]) begin
+    //                 next_bulletBill_state[i] = BBDNE;
+    //             end
+    //             // The bullet should not change states regardless of button input
+    //             // Maintain current state
+    //             else begin
+    //                 next_bulletBill_state[i] = bulletBill_state[i];
+    //             end
+    //         end
+    //         // The bullet exists and is colored green
+    //         EGREEN: begin
+    //             if (rst || isCollided[i] || isEnd[i]) begin
+    //                 next_bulletBill_state[i] = BBDNE;
+    //             end
+    //             // The bullet should not change states regardless of button input
+    //             // Maintain current state
+    //             else begin
+    //                 next_bulletBill_state[i] = bulletBill_state[i];
+    //             end
+    //         end
+    //         default: begin
+    //             next_bulletBill_state[i] = bulletBill_state[i];
+    //         end
+    //     endcase
+    // end
 
 	////////////////////////////////////////////////////////////////////////////////////
 
-    // Ddaver State Machine
+    //Ddaver State Machine
     for (int i = 0; i < 5; i = i + 1) begin	// row iteration
         // Iterations per ddaver
         for (int j = 0; j < 6; j = j + 1) begin	// column iteration 
