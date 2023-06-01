@@ -169,10 +169,12 @@ color_randomizer wanda_vision(ddaver_clock, rst, ddaver_color);
 
 // Blockieee Gameplay
 always @(posedge blockieee_clock) begin
+    // Reset conditions
+    if (rst || isBlockieeeDead) begin
+        // Reset to base condition
+        next_pos <= 4'd5;
+    end
     // If blockieee is in the Steady State
-	 if (rst || isBlockieeeDead) begin
-		next_pos <= 4'd5;
-	 end
     else if (blockieee_state == STEADY) begin
         // Maintain the current position
         next_pos <= curr_pos;
@@ -204,8 +206,57 @@ always @(posedge blockieee_clock) begin
 end
 
 // Bullet Bill Gameplay
-/*
 always @(posedge bullet_clock) begin
+    // Bullet Bill 1 Implementation
+    if (rst) begin
+        //nextUp <= 2'd0;
+        bulletBill_curr_XLoc[0] <= 4'd0;
+        bulletBill_curr_YLoc[0] <= 4'd0;
+        isCollided[0] <= 0;
+        isEnd[0] <= 0;
+    end
+    // Spawning In
+    else if (bulletBill_state[0] == BBDNE && next_bulletBill_state[0] != BBDNE && nextUp == 2'd0) begin
+        bulletBill_curr_YLoc[0] <= curr_pos;
+        bulletBill_curr_XLoc[0] <= 4'd2;
+        //nextUp <= 2'd1;
+    end
+    // Incrementation -> Collision Confirming
+    else if (bulletBill_state[0] != BBDNE && next_bulletBill_state[0] != BBDNE) begin
+        bulletBill_curr_YLoc[0] <= bulletBill_curr_YLoc[0];             // Bullet Bills cannot move in the y direction
+        // Check if it has reached the end
+        if (bulletBill_curr_XLoc[0] < 4'd15) begin
+            bulletBill_curr_XLoc[0] <= bulletBill_curr_XLoc[0] + 4'd1;      // Increment by 1
+            isEnd[0] <= 0;
+            // Collision Confirmation
+            if ((bulletBill_curr_YLoc[0] % 2 != 0) && (bulletBill_curr_XLoc[0] % 2 == 0) && (bulletBill_curr_XLoc[0] >= 4'd4) && (ddaver_state[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] != DDNE)) begin
+                // Log Bullet Bill collision data
+                isCollided[0] <= 1;
+                // Log color for ddaver
+                isHit[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= bulletBill_state[0];
+                isHitAgain[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= bulletBill_state[0] && secondTime[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2];
+            end
+            // Set arbitrary values
+            else begin
+                isCollided[0] <= 0;
+                isHit[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= BBDNE;
+                isHitAgain[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= BBDNE;
+            end
+        end
+        // If it has reached the end
+        else begin
+            bulletBill_curr_XLoc[0] <= 4'd0;
+            isEnd[0] <= 1;
+        end
+        //nextUp <= 2'd1;
+    end
+    // It does not exist
+    else begin
+        bulletBill_curr_YLoc[0] <= bulletBill_curr_YLoc[0];
+        bulletBill_curr_XLoc[0] <= bulletBill_curr_XLoc[0];
+        //nextUp <= 2'd0;
+    end
+    /*
     // Bullet Bill 1 Implementation
     if (rst || isBlockieeeDead) begin
         nextUp <= 2'd0;
@@ -354,11 +405,11 @@ always @(posedge bullet_clock) begin
         bulletBill_curr_YLoc[2] <= bulletBill_curr_YLoc[2];
         bulletBill_curr_XLoc[2] <= bulletBill_curr_XLoc[2];
         nextUp <= 2'd2;
-    end
+    end*/
 end
-*/
 
 // Ddaver Gameplay
+/*
 always @(posedge ddaver_clock) begin
     // Reset Condition
     if (rst || isBlockieeeDead) begin
@@ -488,9 +539,11 @@ always @(posedge ddaver_clock) begin
         end
     end
     /*
+    /*
         If there are no enemies on screen because both activity monitors are at a loss then this else should probably not happen.
         However, when has anything ever worked the way we want it to? #Facts
     */
+/*
     else begin
         for (i = 0; i < 5; i = i + 1) begin
             for (j = 0; j < 6; j = j + 1) begin
@@ -500,6 +553,7 @@ always @(posedge ddaver_clock) begin
         end
     end
 end
+*/
 
 // Negative Edge Updating
 always @(negedge blockieee_clock) begin
@@ -509,6 +563,7 @@ end
 always @(negedge bullet_clock) begin
     bulletBill_state <= next_bulletBill_state;
 end
+/*
 always @(negedge ddaver_clock) begin
     // State Updating
     for (i = 0; i < 5; i = i + 1) begin
@@ -541,8 +596,10 @@ always @(negedge ddaver_clock) begin
         otherActiveCol <= 3'd0;
     end
 end
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // FSM Combinational Logic
 always_comb begin
     // Blockieee State Machine
@@ -627,7 +684,6 @@ always_comb begin
 	////////////////////////////////////////////////////////////////////////////////////
 
     // Bullet Bill State Machine
-/*
     for (int i = 0; i < 3; i = i + 1) begin
         // Iterations per bullet
         case (bulletBill_state[i])
@@ -697,19 +753,17 @@ always_comb begin
                 next_bulletBill_state[i] = bulletBill_state[i];
             end
         endcase
-    end*/
+    end
 
 	////////////////////////////////////////////////////////////////////////////////////
-
-        // Ddaver State Machine
+/*
+    // Ddaver State Machine
     for (int i = 0; i < 5; i = i + 1) begin
         // Iterations per ddaver
         for (int j = 0; j < 6; j = j + 1) begin
             // Move all ddavers
             for (k = 6 - (j + 1); k > 0; k = k - 1) begin
-                /*  Base logical concept:
-                        next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
-                */
+                // Base logical concept: next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
                 case (ddaver_state[i][j + k])
                 // The ddaver does not exist (is not visible onscreen)
                     DDNE: begin
@@ -778,6 +832,7 @@ always_comb begin
                             next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
                         end
                     end
+                    */
 
                     /*
                         Statement of logic:
@@ -786,7 +841,7 @@ always_comb begin
                         collides with the ddaver a second time through. This is a seperate register from isHit for simpler logic
                         at the developer end.
                     */
-
+/*
                     // *** The DEADLY States *** //
                     BLUE: begin
                         // If the game is reset OR a HIT by Blue bulletBill... the enemy "DIES"
@@ -822,8 +877,9 @@ always_comb begin
                 endcase
             end
         end
-    end
+    end*/
 end
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Set Outputs for the VGA
