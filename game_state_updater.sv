@@ -2,7 +2,7 @@ module game_state_updater(
     // Inputs
     input rst,
 
-    // Clock
+    // Input Clocks
     input clk,
 
     // Input Nunchuk Data
@@ -28,13 +28,13 @@ module game_state_updater(
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Input Clocks
-localparam BLOCKIEEE_SPEED = 60;
-localparam DDAVER_SPEED = 1;
-localparam BULLET_SPEED = 90;
+localparam BLOCKIEEE_SPEED = 1500000;
+localparam DDAVER_SPEED = 100000;
+localparam BULLET_SPEED = 3000000;
 
-clockdivider #(BLOCKIEEE_SPEED) blockieee_clock_uut(clk, !rst, blockieee_clock);
-clockdivider #(DDAVER_SPEED) ddaver_clock_uut(clk, !rst, ddaver_clock);
-clockdivider #(BULLET_SPEED) bullet_clock_uut(clk, !rst, bullet_clock);
+clockDivider #(BLOCKIEEE_SPEED) blockieee_clock_uut(clk, blockieee_clock, rst);
+clockDivider #(DDAVER_SPEED) ddaver_clock_uut(clk, ddaver_clock, !rst);
+clockDivider #(BULLET_SPEED) bullet_clock_uut(clk, bullet_clock, !rst);
 
 // FSM State Declarations
 // Blockieee States
@@ -57,13 +57,13 @@ localparam RED = 3'd5;
 localparam GREEN = 3'd6;
 
 // Tolerance Parameter
-localparam SENSITIVITY = 8'd20;
-localparam DEADLOC = 8'd128;             // 128 is base value
+localparam SENSITIVITY = 8'd70;
+localparam DEADLOC = 8'd128;             
 
 // User Experience
-reg[3:0] curr_pos;
+reg[3:0] curr_pos = 4'd5;
 reg[3:0] next_pos;
-reg isBlockieeeDead = 0;                // LOSE Parameter
+reg isBlockieeeDead = 1'd0;
 
 // Firing Mechanics
 reg isCollided;
@@ -71,7 +71,6 @@ reg isCollided;
 // Bullet Bill Position Tracer
 reg[3:0] bulletBill_curr_XLoc;
 reg[3:0] bulletBill_curr_YLoc;
-
 // Hitting Mechanics (as in the Ddaver that has been hit)
 /*
     Description:
@@ -87,10 +86,11 @@ reg[3:0] bulletBill_curr_YLoc;
 */
 
 reg[1:0] isHit [0:4][0:5];
-reg secondTime [0:4][0:5];
-reg[2:0] otherActiveCol;
-reg[2:0] activeCol;
 reg[1:0] isHitAgain [0:4][0:5];
+reg secondTime [0:4][0:5];
+//reg [2:0] shiftPos; 
+reg [2:0] activeCol;
+reg [2:0] otherActiveCol;
 
 // FSM State
 // Blockieee
@@ -101,53 +101,48 @@ reg[1:0] next_blockieee_state = STEADY;
 reg[1:0] bulletBill_state;
 reg[1:0] next_bulletBill_state;
 reg isEnd;
-reg[1:0] nextUp;
+reg [1:0] nextUp;
+
 
 // Ddaver
 reg[2:0] ddaver_state [0:4][0:5];
 reg[2:0] next_ddaver_state [0:4][0:5];
-reg[2:0] ndds [0:4][0:5];
+reg[2:0] ndds[0:4][0:5];
+reg[2:0] ddaver_color[0:4][0:5];
+reg firstTime; 
 
-// Initialize registers
+// Initialize DDaver registers
 integer i;
 integer j;
-integer k;
 initial begin
-    // Initialize blockieee parameters
-    next_pos = 4'd5;
-    curr_pos = 4'd5;
-    // Initialize bullet bill parameters
-    nextUp = 2'd0;
-    // Location initials
-    bulletBill_curr_XLoc = 4'd0;
-    bulletBill_curr_YLoc = 4'd0;
-    // State initials
-    bulletBill_state = BBDNE;
-    // Collision initials
-    isCollided = 0;
-    isEnd = 0;
-/*
-    // Initialize ddaver parameters
-    otherActiveCol = 3'd0;
-    activeCol = 3'd6;
 	for (i = 0; i < 5; i = i + 1) begin
 		for (j = 0; j < 6; j = j + 1) begin
         // Initialize isHit to 0
 			isHit[i][j] = 2'd0;
 			isHitAgain[i][j] = 2'd0;
-            secondTime[i][j] = 0;
-            ndds[i][j] = DDNE;
+			secondTime[i][j] = 1'b0;
         // Initialize states to DNE
 			ddaver_state[i][j] = DDNE;
-			next_ddaver_state[i][j] = DDNE;
+			//next_ddaver_state[i][j] = DDNE;
 		end
 	end
-*/
+	bulletBill_state = BBDNE;
+	//next_bulletBill_state[k] = BBDNE;
+	isEnd = 1'b0;
+	isCollided = 1'b0;
+	bulletBill_curr_XLoc = 4'd0;
+	bulletBill_curr_YLoc = 4'd0;
+	
+	nextUp = 2'd0;
+	//shiftPos = 0;
+	activeCol = 3'd6;
+	otherActiveCol = 3'd0;
+	next_pos = 4'd5;
+	firstTime = 1'b1;
 end
 
 //Instantialize color randomizer
 color_randomizer wanda_vision(ddaver_clock, rst, ddaver_color); 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // FSM Sequential Logic
@@ -156,6 +151,7 @@ color_randomizer wanda_vision(ddaver_clock, rst, ddaver_color);
         Ever wonder why Computer Scientists and Computer Engineers always are in pain. Welp. This next portion is an example
         of why. Jokes aside, the sequential logic is based on various clocking cycles all at their posedge. The explanation of
         the logic behind the sequential lies here:
+            - vga_clock: The posedge for this clock will be      TODO      (prolly something with rst)
             - blockieee_clock: The posedge for this clock will be used to update the position states of the MC depending on
                 nunchuck input.
             - ddaver_clock: The posedge for this clock will be used to update the movement of the ddavers across the screen
@@ -165,14 +161,17 @@ color_randomizer wanda_vision(ddaver_clock, rst, ddaver_color);
                 isHit OR the isHitAgain registers with the appropriate color of the bullet (in state form)
 */
 
+// General Gameplay
+// General Gameplay
+
+
+
 // Blockieee Gameplay
 always @(posedge blockieee_clock) begin
-    // Reset conditions
-    if (rst || isBlockieeeDead) begin
-        // Reset to base condition
-        next_pos <= 4'd5;
-    end
     // If blockieee is in the Steady State
+	 if (rst || isBlockieeeDead) begin
+		next_pos <= 4'd5;
+	 end
     else if (blockieee_state == STEADY) begin
         // Maintain the current position
         next_pos <= curr_pos;
@@ -206,7 +205,8 @@ end
 // Bullet Bill Gameplay
 always @(posedge bullet_clock) begin
     // Bullet Bill 1 Implementation
-    if (rst) begin
+    if (~rst) begin
+        //nextUp <= 2'd0;
         bulletBill_curr_XLoc <= 4'd0;
         bulletBill_curr_YLoc <= 4'd0;
         isCollided <= 0;
@@ -216,6 +216,7 @@ always @(posedge bullet_clock) begin
     else if (bulletBill_state == BBDNE && next_bulletBill_state != BBDNE && nextUp == 2'd0) begin
         bulletBill_curr_YLoc <= curr_pos;
         bulletBill_curr_XLoc <= 4'd2;
+        //nextUp <= 2'd1;
     end
     // Incrementation -> Collision Confirming
     else if (bulletBill_state != BBDNE && next_bulletBill_state != BBDNE) begin
@@ -229,7 +230,7 @@ always @(posedge bullet_clock) begin
                 // Log Bullet Bill collision data
                 isCollided <= 1;
                 // Log color for ddaver
-                isHit[(bulletBill_curr_YLoc - 1) / 2][(bulletBill_curr_XLoc - 4) / 2] <= bulletBill_state;
+                isHit[(bulletBill_curr_YLoc- 1) / 2][(bulletBill_curr_XLoc - 4) / 2] <= bulletBill_state;
                 isHitAgain[(bulletBill_curr_YLoc - 1) / 2][(bulletBill_curr_XLoc - 4) / 2] <= bulletBill_state && secondTime[(bulletBill_curr_YLoc - 1) / 2][(bulletBill_curr_XLoc - 4) / 2];
             end
             // Set arbitrary values
@@ -244,208 +245,76 @@ always @(posedge bullet_clock) begin
             bulletBill_curr_XLoc <= 4'd0;
             isEnd <= 1;
         end
+        //nextUp <= 2'd1;
     end
     // It does not exist
     else begin
         bulletBill_curr_YLoc <= bulletBill_curr_YLoc;
         bulletBill_curr_XLoc <= bulletBill_curr_XLoc;
+        //nextUp <= 2'd0;
     end
+
 end
 
-// Ddaver Gameplay
-/*
+// ddaver gameplay
+// TODO: If the ddaver is red, green, or blue then secondTime should be true
+// TODO: "Left shift" array of ddavers towards "homeworld"
+// TODO: Each ddaver should take on the value of their state
+
+
 always @(posedge ddaver_clock) begin
-    // Reset Condition
-    if (rst || isBlockieeeDead) begin
-        // Reinitialize Ddaver Operators
-        otherActiveCol <= 3'd0;
-        activeCol <= 3'd6;
-        for (i = 0; i < 5; i = i + 1) begin
-            for (j = 0; j < 6; j = j + 1) begin
-			    isHit[i][j] <= 0;
-			    isHitAgain[i][j] <= 0;
-                secondTime[i][j] <= 0;
+	// If any ddaver crosses the "homeworld" barrier, then it is GAME OVER
+	// use a "pointer" to "shift" the values around 
+	integer m;
+	integer n;
+	if (rst) begin
+        for (m = 0; m < 5; m = m + 1) begin
+            for (n = 0; n < 6; n = n + 1) begin
+						secondTime[m][n] <= 0;
             end
         end
-    end
-    // If any ddaver crosses the "Homeworld" barrier then it is GAME OVER
-    else if (((| ddaver_state[0][0]) || (| ddaver_state[1][0]) || (| ddaver_state[2][0]) || (| ddaver_state[3][0]) || (| ddaver_state[4][0])) && ((| next_ddaver_state[0][0]) || (| next_ddaver_state[1][0]) || (| next_ddaver_state[2][0]) || (| next_ddaver_state[3][0]) || (| next_ddaver_state[4][0]))) begin
-        isBlockieeeDead <= 1;
-    end
-    // Check to see active columns
-    else if (activeCol != 3'd0 && activeCol < 3'd7) begin
-        // This means that we are capable of setting states
-        // State Initialization + Incrementation
-        for (i = 0; i < 5; i = i + 1) begin
-            if (activeCol == 3'd6) begin
-                ndds[i][0] <= DDNE;
-                ndds[i][1] <= DDNE;
-                ndds[i][2] <= DDNE;
-                ndds[i][3] <= DDNE;
-                ndds[i][4] <= DDNE;
-                ndds[i][5] <= ddaver_color[i];
-            end
-            else if (activeCol == 3'd5) begin
-                ndds[i][0] <= DDNE;
-                ndds[i][1] <= DDNE;
-                ndds[i][2] <= DDNE;
-                ndds[i][3] <= DDNE;
-                ndds[i][4] <= ddaver_state[i][5];
-                ndds[i][5] <= ddaver_color[i];
-            end
-            else if (activeCol == 3'd4) begin
-                ndds[i][0] <= DDNE;
-                ndds[i][1] <= DDNE;
-                ndds[i][2] <= DDNE;
-                ndds[i][3] <= ddaver_state[i][4];
-                ndds[i][4] <= ddaver_state[i][5];
-                ndds[i][5] <= ddaver_color[i];
-            end
-            else if (activeCol == 3'd3) begin
-                ndds[i][0] <= DDNE;
-                ndds[i][1] <= DDNE;
-                ndds[i][2] <= ddaver_state[i][3];
-                ndds[i][3] <= ddaver_state[i][4];
-                ndds[i][4] <= ddaver_state[i][5];
-                ndds[i][5] <= ddaver_color[i];
-            end
-            else if (activeCol == 3'd2) begin
-                ndds[i][0] <= DDNE;
-                ndds[i][1] <= ddaver_state[i][2];
-                ndds[i][2] <= ddaver_state[i][3];
-                ndds[i][3] <= ddaver_state[i][4];
-                ndds[i][4] <= ddaver_state[i][5];
-                ndds[i][5] <= ddaver_color[i];
-            end
-            else begin
-                ndds[i][0] <= ddaver_state[i][1];
-                ndds[i][1] <= ddaver_state[i][2];
-                ndds[i][2] <= ddaver_state[i][3];
-                ndds[i][3] <= ddaver_state[i][4];
-                ndds[i][4] <= ddaver_state[i][5];
-                ndds[i][5] <= ddaver_color[i];
-            end
-        end
-    end
-    // State Incrementation for continued gameplay
-    else if (otherActiveCol != 3'd0) begin
-        // Ddavers should increment onscreen (dissapearing now from the rightmost)
-        // otherActiveCol will begin incrementing as soon as activeCol reaches 0 [staggered response].
-        for (i = 0; i < 5; i = i + 1) begin
-            if (otherActiveCol == 3'd6) begin
-                ndds[i][0] <= ddaver_state[i][1];
-                ndds[i][1] <= ddaver_state[i][2];
-                ndds[i][2] <= ddaver_state[i][3];
-                ndds[i][3] <= ddaver_state[i][4];
-                ndds[i][4] <= ddaver_state[i][5];
-                ndds[i][5] <= DDNE;
-            end
-            else if (otherActiveCol == 3'd5) begin
-                ndds[i][0] <= ddaver_state[i][1];
-                ndds[i][1] <= ddaver_state[i][2];
-                ndds[i][2] <= ddaver_state[i][3];
-                ndds[i][3] <= ddaver_state[i][4];
-                ndds[i][4] <= DDNE;
-                ndds[i][5] <= DDNE;
-            end
-            else if (otherActiveCol == 3'd4) begin
-                ndds[i][0] <= ddaver_state[i][1];
-                ndds[i][1] <= ddaver_state[i][2];
-                ndds[i][2] <= ddaver_state[i][3];
-                ndds[i][3] <= DDNE;
-                ndds[i][4] <= DDNE;
-                ndds[i][5] <= DDNE;
-            end
-            else if (otherActiveCol == 3'd3) begin
-                ndds[i][0] <= ddaver_state[i][1];
-                ndds[i][1] <= ddaver_state[i][2];
-                ndds[i][2] <= DDNE;
-                ndds[i][3] <= DDNE;
-                ndds[i][4] <= DDNE;
-                ndds[i][5] <= DDNE;
-            end
-            else if (otherActiveCol == 3'd2) begin
-                ndds[i][0] <= ddaver_state[i][1];
-                ndds[i][1] <= DDNE;
-                ndds[i][2] <= DDNE;
-                ndds[i][3] <= DDNE;
-                ndds[i][4] <= DDNE;
-                ndds[i][5] <= DDNE;
-            end
-            else begin
-                ndds[i][0] <= DDNE;
-                ndds[i][1] <= DDNE;
-                ndds[i][2] <= DDNE;
-                ndds[i][3] <= DDNE;
-                ndds[i][4] <= DDNE;
-                ndds[i][5] <= DDNE;
-            end
-        end
-    end
-    /*
-    /*
-        If there are no enemies on screen because both activity monitors are at a loss then this else should probably not happen.
-        However, when has anything ever worked the way we want it to? #Facts
-    */
-/*
-    else begin
-        for (i = 0; i < 5; i = i + 1) begin
-            for (j = 0; j < 6; j = j + 1) begin
-                // This would infer a stagnent screen (a.k.a. no movement and likely no color) if it were to occur. Pray for me.
-                ndds[i][j] <= ddaver_state[i][j]
-            end
-        end
-    end
+		  firstTime <= 1'b0;
+	end
+	else if (firstTime) begin
+		firstTime <= 1'b0;
+	end
+	else begin
+		firstTime <= firstTime;
+	end
 end
-*/
 
 // Negative Edge Updating
 always @(negedge blockieee_clock) begin
-    curr_pos <= next_pos;
     blockieee_state <= next_blockieee_state;
+	 curr_pos <= next_pos;
 end
-always @(negedge bullet_clock) begin
-    bulletBill_state <= next_bulletBill_state;
-end
-/*
-always @(negedge ddaver_clock) begin
-    // State Updating
-    for (i = 0; i < 5; i = i + 1) begin
-        for (j = 0; j < 6; j = j + 1) begin
-            ddaver_state[i][j] <= next_ddaver_state[i][j];
-            // Ddaver Life Indicator
-            if (isHit[i][j] != DDNE && isHitAgain[i][j] == DDNE) begin
-                secondTime[i][j] <= 1;
-            end
-        end
-    end
 
-    // Active + otherActive Implementation
-    if (activeCol > 3'd0 && activeCol < 3'd7) begin
-        activeCol <= activeCol - 3'd1;
-        otherActiveCol <= 3'd0;
-    end
-    // Initialize otherActiveCol
-    else if (activeCol == 3'd0 && otherActiveCol == 3'd0) begin
-        activeCol <= 3'd7;                  // Set it out of bounds
-        otherActiveCol <= 3'd6;
-    end
-    // Will run after first iteration
-    else if (activeCol == 3'd7 && otherActiveCol > 3'd0) begin
-        activeCol <= 3'd7;
-        otherActiveCol <= otherActiveCol - 3'd1;
-    end
-    else begin
-        activeCol <= 3'd0;
-        otherActiveCol <= 3'd0;
-    end
+always @(negedge bullet_clock) begin
+ 	 bulletBill_state <= next_bulletBill_state;
 end
-*/
+
+always @(negedge ddaver_clock) begin
+	 integer a;
+	 integer b;
+	 // state updating
+	 for (a = 0; a < 5; a = a + 1) begin
+		for (b = 0; b < 6; b = b + 1) begin
+			ddaver_state[a][b] <= next_ddaver_state[a][b];
+		end
+	 end
+end
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // FSM Combinational Logic
+/*
+    TODO:   
+        Contains 1 TODO
+*/
 always_comb begin
+	integer k;
+	 integer l;
     // Blockieee State Machine
     case (blockieee_state)
         // Initial State for the Main Character
@@ -528,153 +397,155 @@ always_comb begin
 	////////////////////////////////////////////////////////////////////////////////////
 
     // Bullet Bill State Machine
-    // Iterations per bullet
-    case (bulletBill_state)
-        // The bullet does not exist
-        BBDNE: begin
-            // If the game is reset or a bullet collides with something reset it
-            if (rst || isCollided || isEnd) begin
-                next_bulletBill_state = BBDNE;
-            end
-            // If any button is pressed
-            else if (z || c) begin
-                // Sort through the options availble
-                // If 'z' is pressed
-                if (z && ~c) begin
-                    next_bulletBill_state = EBLUE;
-                end
-                // If 'c' is pressed
-                else if (~z && c) begin
-                    next_bulletBill_state = ERED;
-                end
-                // If both are pressed
-                else begin
-                    next_bulletBill_state = EGREEN;
-                end
-            end
-            // If no button is pressed
-            else begin
-                next_bulletBill_state = BBDNE;
-            end
-        end
-        // But what if the bullet already has a color?
-        // The bullet exists and is colored blue
-        EBLUE: begin
-            // If the game is reset... well you know what to do.
-            if (rst || isCollided || isEnd) begin
-                next_bulletBill_state = BBDNE;
-            end
-            // The bullet should not change states regardless of button input
-            // Maintain current state
-            else begin
-                next_bulletBill_state = bulletBill_state;
-            end
-        end
-        // The bullet exists and is colored red
-        ERED: begin
-            if (rst || isCollided || isEnd) begin
-                next_bulletBill_state = BBDNE;
-            end
-            // The bullet should not change states regardless of button input
-            // Maintain current state
-            else begin
+
+	 // Iterations per bullet
+         case (bulletBill_state)
+             // The bullet does not exist
+             BBDNE: begin
+                 // If the game is reset or a bullet collides with something reset it
+                 if (~rst || isCollided || isEnd) begin
+                     next_bulletBill_state = BBDNE;
+                 end
+                 // If any button is pressed
+                 else if (z || c) begin
+                     // Sort through the options availble
+                     // If 'z' is pressed
+                     if (z && !c) begin
+                         next_bulletBill_state = EBLUE;
+                     end
+                     // If 'c' is pressed
+                     else if (!z && c) begin
+                         next_bulletBill_state = ERED;
+                     end
+                     // If both are pressed
+                     else begin
+                         next_bulletBill_state = EGREEN;
+                     end
+                 end
+                 // If no button is pressed
+                 else begin
+                     next_bulletBill_state = BBDNE;
+                 end
+             end
+             // But what if the bullet already has a color?
+             // The bullet exists and is colored blue
+             EBLUE: begin
+                 // If the game is reset... well you know what to do.
+                 if (~rst || isCollided || isEnd) begin
+                     next_bulletBill_state = BBDNE;
+                 end
+                 // The bullet should not change states regardless of button input
+                 // Maintain current state
+                 else begin
+                     next_bulletBill_state = bulletBill_state;
+                 end
+             end
+             // The bullet exists and is colored red
+             ERED: begin
+                 if (~rst || isCollided || isEnd) begin
+                     next_bulletBill_state = BBDNE;
+                 end
+                 // The bullet should not change states regardless of button input
+                 // Maintain current state
+                 else begin
+                     next_bulletBill_state = bulletBill_state;
+                 end
+             end
+             // The bullet exists and is colored green
+             EGREEN: begin
+                 if (~rst || isCollided || isEnd) begin
+                     next_bulletBill_state = BBDNE;
+                 end
+                 // The bullet should not change states regardless of button input
+                 // Maintain current state
+                 else begin
                     next_bulletBill_state = bulletBill_state;
-            end
-        end
-        // The bullet exists and is colored green
-        EGREEN: begin
-            if (rst || isCollided || isEnd) begin
-                next_bulletBill_state = BBDNE;
-            end
-            // The bullet should not change states regardless of button input
-            // Maintain current state
-            else begin
-                next_bulletBill_state = bulletBill_state;
-            end
-        end
-        default: begin
-            next_bulletBill_state = bulletBill_state;
-        end
-    endcase
+                 end
+             end
+             default: begin
+                 next_bulletBill_state = bulletBill_state;
+             end
+         endcase
+     
 
 	////////////////////////////////////////////////////////////////////////////////////
-/*
-    // Ddaver State Machine
-    for (int i = 0; i < 5; i = i + 1) begin
+
+    //Ddaver State Machine
+	 
+    for (k = 0; k < 5; k = k + 1) begin
         // Iterations per ddaver
-        for (int j = 0; j < 6; j = j + 1) begin
-            // Move all ddavers
-            for (k = 6 - (j + 1); k > 0; k = k - 1) begin
-                // Base logical concept: next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
-                case (ddaver_state[i][j + k])
+        for ( l = 0; l < 6; l = l + 1) begin
+                case (ddaver_state[k][l])
                 // The ddaver does not exist (is not visible onscreen)
                     DDNE: begin
                         // If the game is reset
                         if (rst) begin
-                            next_ddaver_state[i][j + k - 1] = DDNE;
-                        end
-					    else begin
-						    next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
-					    end
+                            next_ddaver_state[k][l] = DDNE;
+                       end
+								else if (firstTime) begin
+									next_ddaver_state[k][l] = ddaver_color[k][l];
+								end
+								else begin
+									next_ddaver_state[k][l] = ddaver_state[k][l];
+								end
                     end
                     PURPLE: begin
                         if (rst) begin
-                            next_ddaver_state[i][j + k - 1] = DDNE;
+                            next_ddaver_state[k][l] = DDNE;
                         end
                         // HIT by Blue bulletBill
-                        else if (isHit[i][j + k] == EBLUE) begin
+                        else if (isHit[k][l] == EBLUE) begin
                             // Change color to red
-                            next_ddaver_state[i][j + k - 1] = RED;
+                            next_ddaver_state[k][l] = RED;
                         end
                         // HIT by Red bulletBill
-                        else if (isHit[i][j + k] == ERED) begin
+                        else if (isHit[k][l] == ERED) begin
                             // Change color to blue
-                            next_ddaver_state[i][j + k - 1] = BLUE;
+                            next_ddaver_state[k][l] = BLUE;
                         end
                         // IF it is HIT by green bulletBill OR not HIT then does not matter no change
                         else begin
-                            next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
+                            next_ddaver_state[k][l] = PURPLE;
                         end
                     end
                     ORANGE: begin
                         if (rst) begin
-                            next_ddaver_state[i][j + k - 1] = DDNE;
+                            next_ddaver_state[k][l] = DDNE;
                         end
                         // HIT by Green bulletBill
-                        else if (isHit[i][j + k] == EGREEN) begin
+                        else if (isHit[i][j] == EGREEN) begin
                             // Change color to Red
-                            next_ddaver_state[i][j + k - 1] = RED;
+                            next_ddaver_state[k][l] = RED;
                         end
                         // HIT by Red bulletBill
-                        else if (isHit[i][j + k] == ERED) begin
+                        else if (isHit[k][l] == ERED) begin
                             // Change color to green
-                            next_ddaver_state[i][j + k - 1] = GREEN;
+                            next_ddaver_state[k][l] = GREEN;
                         end
                         // IF it is HIT by blue bulletBill OR not HIT then does not matter no change
                         else begin
-                            next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
+                            next_ddaver_state[k][l] = ORANGE;
                         end
                     end
                     YELLOW: begin
                         if (rst) begin
-                            next_ddaver_state[i][j + k - 1] = DDNE;
+                            next_ddaver_state[k][l] = DDNE;
                         end
                         // HIT by Blue bulletBill
-                        else if (isHit[i][j + k] == EBLUE) begin
+                        else if (isHit[k][l] == EBLUE) begin
                             // Change color to green
-                            next_ddaver_state[i][j + k - 1] = GREEN;
+                            next_ddaver_state[k][l] = GREEN;
                         end
                         // HIT by Green bulletBill
-                        else if (isHit[i][j + k] == EGREEN) begin
+                        else if (isHit[k][l] == EGREEN) begin
                             // Change color to blue
-                            next_ddaver_state[i][j + k - 1] = BLUE;
+                            next_ddaver_state[k][l] = BLUE;
                         end
                         // IF it is HIT by green bulletBill OR not HIT then does not matter no change
                         else begin
-                            next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
+                            next_ddaver_state[k][l] = YELLOW;
                         end
                     end
-                    */
 
                     /*
                         Statement of logic:
@@ -683,49 +554,47 @@ always_comb begin
                         collides with the ddaver a second time through. This is a seperate register from isHit for simpler logic
                         at the developer end.
                     */
-/*
+
                     // *** The DEADLY States *** //
                     BLUE: begin
                         // If the game is reset OR a HIT by Blue bulletBill... the enemy "DIES"
-                        if (rst || (isHitAgain[i][j + k] == EBLUE)) begin
-                            next_ddaver_state[i][j + k - 1] = DDNE;
+                        if (rst || (isHitAgain[k][l] == EBLUE)) begin
+                            next_ddaver_state[k][l] = DDNE;
                         end
                         // Otherwise the enemy continues to exist happy and free
                         else begin
-                            next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
+                            next_ddaver_state[k][l] = BLUE;
                         end
                     end
                     RED: begin
                         // If the game is reset OR a HIT by Red bulletBill
-                        if (rst || (isHitAgain[i][j + k] == ERED)) begin
-                            next_ddaver_state[i][j + k - 1] = DDNE;
+                        if (rst || (isHitAgain[k][l] == ERED)) begin
+                            next_ddaver_state[k][l] = DDNE;
                         end
                         else begin
-                            next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
+                            next_ddaver_state[k][l] = RED;
                         end
                     end
                     GREEN: begin
                         // If the game is reset OR a HIT by Red bulletBill
-                        if (rst || (isHitAgain[i][j + k] == ERED)) begin
-                            next_ddaver_state[i][j + k - 1] = DDNE;
+                        if (rst || (isHitAgain[k][l] == ERED)) begin
+                            next_ddaver_state[k][l] = DDNE;
                         end
                         else begin
-                            next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
+                            next_ddaver_state[k][l] = GREEN;
                         end
                     end
                     default: begin
-                        next_ddaver_state[i][j + k - 1] = ddaver_state[i][j + k];
+                        next_ddaver_state[k][l] = ddaver_state[k][l];
                     end
                 endcase
-            end
+           end
         end
-    end*/
-end
-
+    end
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Set Outputs for the VGA
-game_interpreter pain_interpreter(curr_pos, ndds, bulletBill_state, bulletBill_curr_XLoc, bulletBill_curr_YLoc, blockieee_pos, ddavers, bulletBillColor, bulletBillXLoc, bulletBillYLoc);
+game_interpreter pain_interpreter(curr_pos, ddaver_state, bulletBill_state, bulletBill_curr_XLoc, bulletBill_curr_YLoc, blockieee_pos, ddavers, bulletBillColor, bulletBillXLoc, bulletBillYLoc);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
