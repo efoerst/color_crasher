@@ -11,9 +11,9 @@ module graphics_generator(
     input[11:0] ddavers [0:4][0:5],
 
     // Declare BulletBill information arrays
-    input[11:0] bulletBillColor [0:2],
-    input[3:0] bulletBillXLoc [0:2],
-    input[3:0] bulletBillYLoc [0:2],
+    input[11:0] bulletBillColor,
+    input[3:0] bulletBillXLoc,
+    input[3:0] bulletBillYLoc,
 
     // Output VGA display colors
     /*
@@ -59,26 +59,12 @@ always_comb begin
         end
 
         // -- Bullet Bill Battlefield Implementation --
-        // BulletBill 1
-        else if ((horizCount / BSIZE) == $unsigned(bulletBillXLoc[0]) && (vertCount / BSIZE) == $unsigned(bulletBillYLoc[0]) && bulletBillColor[0] != 12'd0) begin
+        // BulletBill
+        else if ((horizCount / BSIZE) == $unsigned(bulletBillXLoc) && (vertCount / BSIZE) == $unsigned(bulletBillYLoc) && bulletBillColor != 12'd0) begin
             // Set RGB Values
-            red = bulletBillColor[0][11:8];
-            green = bulletBillColor[0][7:4];
-            blue = bulletBillColor[0][3:0];
-        end
-        // BulletBill 2
-        else if ((horizCount / BSIZE) == $unsigned(bulletBillXLoc[1]) && (vertCount / BSIZE) == $unsigned(bulletBillYLoc[1]) && bulletBillColor[1] != 12'd0) begin
-            // Set RGB Values
-            red = bulletBillColor[1][11:8];
-            green = bulletBillColor[1][7:4];
-            blue = bulletBillColor[1][3:0];
-        end
-        // BulletBill 3
-        else if ((horizCount / BSIZE) == $unsigned(bulletBillXLoc[2]) && (vertCount / BSIZE) == $unsigned(bulletBillYLoc[2]) && bulletBillColor[2] != 12'd0) begin
-            // Set RGB Values
-            red = bulletBillColor[2][11:8];
-            green = bulletBillColor[2][7:4];
-            blue = bulletBillColor[2][3:0];
+            red = bulletBillColor[11:8];
+            green = bulletBillColor[7:4];
+            blue = bulletBillColor[3:0];
         end
 
         // -- Battlefield DDaver Implementation --
