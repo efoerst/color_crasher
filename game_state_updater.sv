@@ -123,7 +123,6 @@ initial begin
     bulletBill_curr_YLoc = 4'd0;
     // State initials
     bulletBill_state = BBDNE;
-    next_bulletBill_state = BBDNE;
     // Collision initials
     isCollided = 0;
     isEnd = 0;
@@ -208,7 +207,6 @@ end
 always @(posedge bullet_clock) begin
     // Bullet Bill 1 Implementation
     if (rst) begin
-        //nextUp <= 2'd0;
         bulletBill_curr_XLoc <= 4'd0;
         bulletBill_curr_YLoc <= 4'd0;
         isCollided <= 0;
@@ -218,7 +216,6 @@ always @(posedge bullet_clock) begin
     else if (bulletBill_state == BBDNE && next_bulletBill_state != BBDNE && nextUp == 2'd0) begin
         bulletBill_curr_YLoc <= curr_pos;
         bulletBill_curr_XLoc <= 4'd2;
-        //nextUp <= 2'd1;
     end
     // Incrementation -> Collision Confirming
     else if (bulletBill_state != BBDNE && next_bulletBill_state != BBDNE) begin
@@ -247,13 +244,11 @@ always @(posedge bullet_clock) begin
             bulletBill_curr_XLoc <= 4'd0;
             isEnd <= 1;
         end
-        //nextUp <= 2'd1;
     end
     // It does not exist
     else begin
         bulletBill_curr_YLoc <= bulletBill_curr_YLoc;
         bulletBill_curr_XLoc <= bulletBill_curr_XLoc;
-        //nextUp <= 2'd0;
     end
 end
 
@@ -601,7 +596,6 @@ always_comb begin
             next_bulletBill_state = bulletBill_state;
         end
     endcase
-end
 
 	////////////////////////////////////////////////////////////////////////////////////
 /*
