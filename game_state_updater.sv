@@ -20,9 +20,9 @@ module game_state_updater(
     output reg[11:0] ddavers [0:4][0:5],
 
     // Bullet Bill Output
-    output reg[11:0] bulletBillColor [0:2],
-    output reg[3:0] bulletBillXLoc [0:2],
-    output reg[3:0] bulletBillYLoc [0:2]
+    output reg[11:0] bulletBillColor,
+    output reg[3:0] bulletBillXLoc,
+    output reg[3:0] bulletBillYLoc
 );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -66,11 +66,11 @@ reg[3:0] next_pos;
 reg isBlockieeeDead = 0;                // LOSE Parameter
 
 // Firing Mechanics
-reg isCollided [0:2];
+reg isCollided;
 
 // Bullet Bill Position Tracer
-reg[3:0] bulletBill_curr_XLoc [0:2];
-reg[3:0] bulletBill_curr_YLoc [0:2];
+reg[3:0] bulletBill_curr_XLoc;
+reg[3:0] bulletBill_curr_YLoc;
 
 // Hitting Mechanics (as in the Ddaver that has been hit)
 /*
@@ -98,9 +98,9 @@ reg[1:0] blockieee_state = STEADY;
 reg[1:0] next_blockieee_state = STEADY;
 
 // Bullet Bill
-reg[1:0] bulletBill_state[0:2];
-reg[1:0] next_bulletBill_state[0:2];
-reg isEnd[0:2];
+reg[1:0] bulletBill_state;
+reg[1:0] next_bulletBill_state;
+reg isEnd;
 reg[1:0] nextUp;
 
 // Ddaver
@@ -118,18 +118,16 @@ initial begin
     curr_pos = 4'd5;
     // Initialize bullet bill parameters
     nextUp = 2'd0;
-    for (i = 0; i < 3; i = i + 1) begin
-        // Location initials
-        bulletBill_curr_XLoc[i] = 4'd0;
-        bulletBill_curr_YLoc[i] = 4'd0;
-        // State initials
-        bulletBill_state[i] = BBDNE;
-        next_bulletBill_state[i] = BBDNE;
-        // Collision initials
-        isCollided[i] = 0;
-        isEnd[i] = 0;
-    end
-
+    // Location initials
+    bulletBill_curr_XLoc = 4'd0;
+    bulletBill_curr_YLoc = 4'd0;
+    // State initials
+    bulletBill_state = BBDNE;
+    next_bulletBill_state = BBDNE;
+    // Collision initials
+    isCollided = 0;
+    isEnd = 0;
+/*
     // Initialize ddaver parameters
     otherActiveCol = 3'd0;
     activeCol = 3'd6;
@@ -145,6 +143,7 @@ initial begin
 			next_ddaver_state[i][j] = DDNE;
 		end
 	end
+*/
 end
 
 //Instantialize color randomizer
@@ -210,202 +209,52 @@ always @(posedge bullet_clock) begin
     // Bullet Bill 1 Implementation
     if (rst) begin
         //nextUp <= 2'd0;
-        bulletBill_curr_XLoc[0] <= 4'd0;
-        bulletBill_curr_YLoc[0] <= 4'd0;
-        isCollided[0] <= 0;
-        isEnd[0] <= 0;
+        bulletBill_curr_XLoc <= 4'd0;
+        bulletBill_curr_YLoc <= 4'd0;
+        isCollided <= 0;
+        isEnd <= 0;
     end
     // Spawning In
-    else if (bulletBill_state[0] == BBDNE && next_bulletBill_state[0] != BBDNE && nextUp == 2'd0) begin
-        bulletBill_curr_YLoc[0] <= curr_pos;
-        bulletBill_curr_XLoc[0] <= 4'd2;
+    else if (bulletBill_state == BBDNE && next_bulletBill_state != BBDNE && nextUp == 2'd0) begin
+        bulletBill_curr_YLoc <= curr_pos;
+        bulletBill_curr_XLoc <= 4'd2;
         //nextUp <= 2'd1;
     end
     // Incrementation -> Collision Confirming
-    else if (bulletBill_state[0] != BBDNE && next_bulletBill_state[0] != BBDNE) begin
-        bulletBill_curr_YLoc[0] <= bulletBill_curr_YLoc[0];             // Bullet Bills cannot move in the y direction
+    else if (bulletBill_state != BBDNE && next_bulletBill_state != BBDNE) begin
+        bulletBill_curr_YLoc <= bulletBill_curr_YLoc;             // Bullet Bills cannot move in the y direction
         // Check if it has reached the end
-        if (bulletBill_curr_XLoc[0] < 4'd15) begin
-            bulletBill_curr_XLoc[0] <= bulletBill_curr_XLoc[0] + 4'd1;      // Increment by 1
-            isEnd[0] <= 0;
+        if (bulletBill_curr_XLoc < 4'd15) begin
+            bulletBill_curr_XLoc <= bulletBill_curr_XLoc + 4'd1;      // Increment by 1
+            isEnd <= 0;
             // Collision Confirmation
-            if ((bulletBill_curr_YLoc[0] % 2 != 0) && (bulletBill_curr_XLoc[0] % 2 == 0) && (bulletBill_curr_XLoc[0] >= 4'd4) && (ddaver_state[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] != DDNE)) begin
+            if ((bulletBill_curr_YLoc % 2 != 0) && (bulletBill_curr_XLoc % 2 == 0) && (bulletBill_curr_XLoc >= 4'd4) && (ddaver_state[(bulletBill_curr_YLoc - 1) / 2][(bulletBill_curr_XLoc - 4) / 2] != DDNE)) begin
                 // Log Bullet Bill collision data
-                isCollided[0] <= 1;
+                isCollided <= 1;
                 // Log color for ddaver
-                isHit[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= bulletBill_state[0];
-                isHitAgain[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= bulletBill_state[0] && secondTime[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2];
+                isHit[(bulletBill_curr_YLoc - 1) / 2][(bulletBill_curr_XLoc - 4) / 2] <= bulletBill_state;
+                isHitAgain[(bulletBill_curr_YLoc - 1) / 2][(bulletBill_curr_XLoc - 4) / 2] <= bulletBill_state && secondTime[(bulletBill_curr_YLoc - 1) / 2][(bulletBill_curr_XLoc - 4) / 2];
             end
             // Set arbitrary values
             else begin
-                isCollided[0] <= 0;
-                isHit[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= BBDNE;
-                isHitAgain[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= BBDNE;
+                isCollided <= 0;
+                isHit[(bulletBill_curr_YLoc - 1) / 2][(bulletBill_curr_XLoc - 4) / 2] <= BBDNE;
+                isHitAgain[(bulletBill_curr_YLoc - 1) / 2][(bulletBill_curr_XLoc - 4) / 2] <= BBDNE;
             end
         end
         // If it has reached the end
         else begin
-            bulletBill_curr_XLoc[0] <= 4'd0;
-            isEnd[0] <= 1;
+            bulletBill_curr_XLoc <= 4'd0;
+            isEnd <= 1;
         end
         //nextUp <= 2'd1;
     end
     // It does not exist
     else begin
-        bulletBill_curr_YLoc[0] <= bulletBill_curr_YLoc[0];
-        bulletBill_curr_XLoc[0] <= bulletBill_curr_XLoc[0];
+        bulletBill_curr_YLoc <= bulletBill_curr_YLoc;
+        bulletBill_curr_XLoc <= bulletBill_curr_XLoc;
         //nextUp <= 2'd0;
     end
-    /*
-    // Bullet Bill 1 Implementation
-    if (rst || isBlockieeeDead) begin
-        nextUp <= 2'd0;
-        bulletBill_curr_XLoc[0] <= 4'd0;
-        bulletBill_curr_YLoc[0] <= 4'd0;
-        isCollided[0] <= 0;
-        isEnd[0] <= 0;
-    end
-    // Spawning In
-    else if (bulletBill_state[0] == BBDNE && next_bulletBill_state[0] != BBDNE && nextUp == 2'd0) begin
-        bulletBill_curr_YLoc[0] <= curr_pos;
-        bulletBill_curr_XLoc[0] <= 4'd2;
-        nextUp <= 2'd1;
-    end
-    // Incrementation -> Collision Confirming
-    else if (bulletBill_state[0] != BBDNE && next_bulletBill_state[0] != BBDNE) begin
-        bulletBill_curr_YLoc[0] <= bulletBill_curr_YLoc[0];             // Bullet Bills cannot move in the y direction
-        // Check if it has reached the end
-        if (bulletBill_curr_XLoc[0] < 4'd15) begin
-            bulletBill_curr_XLoc[0] <= bulletBill_curr_XLoc[0] + 4'd1;      // Increment by 1
-            isEnd[0] <= 0;
-            // Collision Confirmation
-            if ((bulletBill_curr_YLoc[0] % 2 != 0) && (bulletBill_curr_XLoc[0] % 2 == 0) && (bulletBill_curr_XLoc[0] >= 4'd4) && (ddaver_state[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] != DDNE)) begin
-                // Log Bullet Bill collision data
-                isCollided[0] <= 1;
-                // Log color for ddaver
-                isHit[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= bulletBill_state[0];
-                isHitAgain[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= bulletBill_state[0] && secondTime[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2];
-            end
-            // Set arbitrary values
-            else begin
-                isCollided[0] <= 0;
-                isHit[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= BBDNE;
-                isHitAgain[(bulletBill_curr_YLoc[0] - 1) / 2][(bulletBill_curr_XLoc[0] - 4) / 2] <= BBDNE;
-            end
-        end
-        // If it has reached the end
-        else begin
-            bulletBill_curr_XLoc[0] <= 4'd0;
-            isEnd[0] <= 1;
-        end
-        nextUp <= 2'd1;
-    end
-    // It does not exist
-    else begin
-        bulletBill_curr_YLoc[0] <= bulletBill_curr_YLoc[0];
-        bulletBill_curr_XLoc[0] <= bulletBill_curr_XLoc[0];
-        nextUp <= 2'd0;
-    end
-
-    // Bullet Bill 2 Implementation
-    if (rst || isBlockieeeDead) begin
-        nextUp <= 2'd0;
-        bulletBill_curr_XLoc[1] <= 4'd0;
-        bulletBill_curr_YLoc[1] <= 4'd0;
-        isCollided[1] <= 0;
-        isEnd[1] <= 0;
-    end
-    // Spawning In
-    else if (bulletBill_state[1] == BBDNE && next_bulletBill_state[1] != BBDNE && nextUp == 2'd1) begin
-        bulletBill_curr_YLoc[1] <= curr_pos;
-        bulletBill_curr_XLoc[1] <= 4'd2;
-        nextUp <= 2'd2;
-    end
-    // Incrementation -> Collision Confirming
-    else if (bulletBill_state[1] != BBDNE && next_bulletBill_state[1] != BBDNE) begin
-        bulletBill_curr_YLoc[1] <= bulletBill_curr_YLoc[1];             // Bullet Bills cannot move in the y direction
-        // Check if it has reached the end
-        if (bulletBill_curr_XLoc[1] < 4'd15) begin
-            bulletBill_curr_XLoc[1] <= bulletBill_curr_XLoc[1] + 4'd1;      // Increment by 1
-            isEnd[1] <= 0;
-            // Collision Confirmation
-            if ((bulletBill_curr_YLoc[1] % 2 != 0) && (bulletBill_curr_XLoc[1] % 2 == 0) && (bulletBill_curr_XLoc[1] >= 4'd4) && (ddaver_state[(bulletBill_curr_YLoc[1] - 1) / 2][(bulletBill_curr_XLoc[1] - 4) / 2] != DDNE)) begin
-                // Log Bullet Bill collision data
-                isCollided[1] <= 1;
-                // Log color for ddaver
-                isHit[(bulletBill_curr_YLoc[1] - 1) / 2][(bulletBill_curr_XLoc[1] - 4) / 2] <= bulletBill_state[1];
-                isHitAgain[(bulletBill_curr_YLoc[1] - 1) / 2][(bulletBill_curr_XLoc[1] - 4) / 2] <= bulletBill_state[1] && secondTime[(bulletBill_curr_YLoc[1] - 1) / 2][(bulletBill_curr_XLoc[1] - 4) / 2];
-            end
-            // Set arbitrary values
-            else begin
-                isCollided[1] <= 0;
-                isHit[(bulletBill_curr_YLoc[1] - 1) / 2][(bulletBill_curr_XLoc[1] - 4) / 2] <= BBDNE;
-                isHitAgain[(bulletBill_curr_YLoc[1] - 1) / 2][(bulletBill_curr_XLoc[1] - 4) / 2] <= BBDNE;
-            end
-        end
-        // If it has reached the end
-        else begin
-            bulletBill_curr_XLoc[1] <= 4'd0;
-            isEnd[1] <= 1;
-        end
-        nextUp <= 2'd2;
-    end
-    // It does not exist
-    else begin
-        bulletBill_curr_YLoc[1] <= bulletBill_curr_YLoc[1];
-        bulletBill_curr_XLoc[1] <= bulletBill_curr_XLoc[1];
-        nextUp <= 2'd1;
-    end
-
-    // Bullet Bill 3 Implementation
-    if (rst || isBlockieeeDead) begin
-        nextUp <= 2'd0;
-        bulletBill_curr_XLoc[2] <= 4'd0;
-        bulletBill_curr_YLoc[2] <= 4'd0;
-        isCollided[2] <= 0;
-        isEnd[2] <= 0;
-    end
-    // Spawning In
-    else if (bulletBill_state[2] == BBDNE && next_bulletBill_state[2] != BBDNE && nextUp == 2'd2) begin
-        bulletBill_curr_YLoc[2] <= curr_pos;
-        bulletBill_curr_XLoc[2] <= 4'd2;
-        nextUp <= 2'd0;
-    end
-    // Incrementation -> Collision Confirming
-    else if (bulletBill_state[2] != BBDNE && next_bulletBill_state[2] != BBDNE) begin
-        bulletBill_curr_YLoc[2] <= bulletBill_curr_YLoc[2];             // Bullet Bills cannot move in the y direction
-        // Check if it has reached the end
-        if (bulletBill_curr_XLoc[2] < 4'd15) begin
-            bulletBill_curr_XLoc[2] <= bulletBill_curr_XLoc[2] + 4'd1;      // Increment by 1
-            isEnd[2] <= 0;
-            // Collision Confirmation
-            if ((bulletBill_curr_YLoc[2] % 2 != 0) && (bulletBill_curr_XLoc[2] % 2 == 0) && (bulletBill_curr_XLoc[2] >= 4'd4) && (ddaver_state[(bulletBill_curr_YLoc[2] - 1) / 2][(bulletBill_curr_XLoc[2] - 4) / 2] != DDNE)) begin
-                // Log Bullet Bill collision data
-                isCollided[2] <= 1;
-                // Log color for ddaver
-                isHit[(bulletBill_curr_YLoc[2] - 1) / 2][(bulletBill_curr_XLoc[2] - 4) / 2] <= bulletBill_state[2];
-                isHitAgain[(bulletBill_curr_YLoc[2] - 1) / 2][(bulletBill_curr_XLoc[2] - 4) / 2] <= bulletBill_state[2] && secondTime[(bulletBill_curr_YLoc[2] - 1) / 2][(bulletBill_curr_XLoc[2] - 4) / 2];
-            end
-            // Set arbitrary values
-            else begin
-                isCollided[2] <= 0;
-                isHit[(bulletBill_curr_YLoc[2] - 1) / 2][(bulletBill_curr_XLoc[2] - 4) / 2] <= BBDNE;
-                isHitAgain[(bulletBill_curr_YLoc[2] - 1) / 2][(bulletBill_curr_XLoc[2] - 4) / 2] <= BBDNE;
-            end
-        end
-        // If it has reached the end
-        else begin
-            bulletBill_curr_XLoc[2] <= 4'd0;
-            isEnd[2] <= 1;
-        end
-        nextUp <= 2'd0;
-    end
-    // It does not exist
-    else begin
-        bulletBill_curr_YLoc[2] <= bulletBill_curr_YLoc[2];
-        bulletBill_curr_XLoc[2] <= bulletBill_curr_XLoc[2];
-        nextUp <= 2'd2;
-    end*/
 end
 
 // Ddaver Gameplay
@@ -684,76 +533,75 @@ always_comb begin
 	////////////////////////////////////////////////////////////////////////////////////
 
     // Bullet Bill State Machine
-    for (int i = 0; i < 3; i = i + 1) begin
-        // Iterations per bullet
-        case (bulletBill_state[i])
-            // The bullet does not exist
-            BBDNE: begin
-                // If the game is reset or a bullet collides with something reset it
-                if (rst || isCollided[i] || isEnd[i]) begin
-                    next_bulletBill_state[i] = BBDNE;
+    // Iterations per bullet
+    case (bulletBill_state)
+        // The bullet does not exist
+        BBDNE: begin
+            // If the game is reset or a bullet collides with something reset it
+            if (rst || isCollided || isEnd) begin
+                next_bulletBill_state = BBDNE;
+            end
+            // If any button is pressed
+            else if (z || c) begin
+                // Sort through the options availble
+                // If 'z' is pressed
+                if (z && ~c) begin
+                    next_bulletBill_state = EBLUE;
                 end
-                // If any button is pressed
-                else if (z || c) begin
-                    // Sort through the options availble
-                    // If 'z' is pressed
-                    if (z && ~c) begin
-                        next_bulletBill_state[i] = EBLUE;
-                    end
-                    // If 'c' is pressed
-                    else if (~z && c) begin
-                        next_bulletBill_state[i] = ERED;
-                    end
-                    // If both are pressed
-                    else begin
-                        next_bulletBill_state[i] = EGREEN;
-                    end
+                // If 'c' is pressed
+                else if (~z && c) begin
+                    next_bulletBill_state = ERED;
                 end
-                // If no button is pressed
+                // If both are pressed
                 else begin
-                    next_bulletBill_state[i] = BBDNE;
+                    next_bulletBill_state = EGREEN;
                 end
             end
-            // But what if the bullet already has a color?
-            // The bullet exists and is colored blue
-            EBLUE: begin
-                // If the game is reset... well you know what to do.
-                if (rst || isCollided[i] || isEnd[i]) begin
-                    next_bulletBill_state[i] = BBDNE;
-                end
-                // The bullet should not change states regardless of button input
-                // Maintain current state
-                else begin
-                    next_bulletBill_state[i] = bulletBill_state[i];
-                end
+            // If no button is pressed
+            else begin
+                next_bulletBill_state = BBDNE;
             end
-            // The bullet exists and is colored red
-            ERED: begin
-                if (rst || isCollided[i] || isEnd[i]) begin
-                    next_bulletBill_state[i] = BBDNE;
-                end
-                // The bullet should not change states regardless of button input
-                // Maintain current state
-                else begin
-                    next_bulletBill_state[i] = bulletBill_state[i];
-                end
+        end
+        // But what if the bullet already has a color?
+        // The bullet exists and is colored blue
+        EBLUE: begin
+            // If the game is reset... well you know what to do.
+            if (rst || isCollided || isEnd) begin
+                next_bulletBill_state = BBDNE;
             end
-            // The bullet exists and is colored green
-            EGREEN: begin
-                if (rst || isCollided[i] || isEnd[i]) begin
-                    next_bulletBill_state[i] = BBDNE;
-                end
-                // The bullet should not change states regardless of button input
-                // Maintain current state
-                else begin
-                    next_bulletBill_state[i] = bulletBill_state[i];
-                end
+            // The bullet should not change states regardless of button input
+            // Maintain current state
+            else begin
+                next_bulletBill_state = bulletBill_state;
             end
-            default: begin
-                next_bulletBill_state[i] = bulletBill_state[i];
+        end
+        // The bullet exists and is colored red
+        ERED: begin
+            if (rst || isCollided || isEnd) begin
+                next_bulletBill_state = BBDNE;
             end
-        endcase
-    end
+            // The bullet should not change states regardless of button input
+            // Maintain current state
+            else begin
+                    next_bulletBill_state = bulletBill_state;
+            end
+        end
+        // The bullet exists and is colored green
+        EGREEN: begin
+            if (rst || isCollided || isEnd) begin
+                next_bulletBill_state = BBDNE;
+            end
+            // The bullet should not change states regardless of button input
+            // Maintain current state
+            else begin
+                next_bulletBill_state = bulletBill_state;
+            end
+        end
+        default: begin
+            next_bulletBill_state = bulletBill_state;
+        end
+    endcase
+end
 
 	////////////////////////////////////////////////////////////////////////////////////
 /*
