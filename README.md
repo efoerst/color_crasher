@@ -20,8 +20,8 @@ The repository is complete with the exception of <em>game_state_updater.sv</em>.
 This project is powered by systemVerilog and Intel's Quartus FPGA HDL processor.
 
 <h2> Component List </h2>
-- Altera TerasIC DE-10 Lite FPGA \n
-- Wii Nunchuck \n
-- VGA Display \n
-- VGA Cable \n
+- Altera TerasIC DE-10 Lite FPGA <br>
+- Wii Nunchuck <br>
+- VGA Display <br>
+- VGA Cable <br>
 - Appropriate Power Cables
