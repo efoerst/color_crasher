@@ -1,3 +1,11 @@
+/*
+Note: The following module has unresolved bugs.
+
+Since Last Update:
+ - Main Character is able to move
+ - Bullet state machine and posedge logic works in sim
+ - Enemy iteration is incomplete, colors randomize however they fail to move cross screen.
+*/
 module game_state_updater(
     // Inputs
     input rst,
