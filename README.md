@@ -11,7 +11,7 @@ This project is composed of 5 key sections:
 - *Game State Updater for MC, Bullet(Bill), and Enemy operation*
 
 <h2> Project Goals </h2>
-The near-completion of this project taught us how to develop, integrate, and debug an I2C Protocol. It also taught us how to successfully utilize pixel RGB bit classificaiton to show images on a VGA Display. We were also able to implement a simulation-based fully functional state machine for gameplay processing. A future goal of ours is to reflect on what was accomplished in this repository and integrate a functional variation of this gameplay using RAM in addition to a more modular approach in its development.
+The near-completion of this project taught us how to develop, integrate, and debug an I2C Protocol. It also taught us how to successfully utilize pixel RGB bit classification to show images on a VGA Display. We were also able to implement a simulation-based fully functional state machine for gameplay processing. A future goal of ours is to reflect on what was accomplished in this repository and integrate a functional variation of this gameplay using RAM in addition to a more modular approach in its development.
 
 <h2> Disclaimer </h2>
 This project still has some bugs but we are excited to launch the code! <br><br>
